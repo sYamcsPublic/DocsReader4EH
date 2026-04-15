@@ -1,0 +1,18 @@
+# Pythonの一時キャッシュ
+__pycache__/
+*.py[cod]
+
+# 仮想環境の実体
+venv/
+.venv/
+env/
+
+# 学習データ
+input.txt
+
+# 学習モデル
+*.pkl
+
+# OSのゴミファイル
+.DS_Store
+Thumbs.db

@@ -1,0 +1,22 @@
+from PIL import Image, ImageOps
+
+# 元画像を読み込み
+img = Image.open('app_icon.png').convert("RGBA")
+
+# 1. Any用（透過・最大化）
+any_img = img.copy()
+# 背景（黒）を透過させる処理（簡易版）
+data = any_img.getdata()
+new_data = [(r, g, b, 0) if r < 30 and g < 30 and b < 30 else (r, g, b, a) for r, g, b, a in data]
+any_img.putdata(new_data)
+# 余白をカットして512x512にリサイズ
+bbox = any_img.getbbox()
+any_img = any_img.crop(bbox).resize((512, 512), Image.LANCZOS)
+any_img.save('icon-any.png')
+
+# 2. Maskable用（黒背景・セーフゾーン）
+maskable = Image.new("RGB", (512, 512), "#050505")
+# ロゴを80%のサイズ（409px）にして中央配置
+logo_small = any_img.resize((409, 409), Image.LANCZOS)
+maskable.paste(logo_small, (51, 51), logo_small)
+maskable.save('icon-maskable.png')

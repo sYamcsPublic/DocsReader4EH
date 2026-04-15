@@ -1,0 +1,23 @@
+{
+  "name": "Docs Reader for EvenHub",
+  "short_name": "DocsReader4EH",
+  "description": "Google Document Reader for Even Realities G2",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "icon-any.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+    "package_id": "com.evenrealities.docsreader4eh000301",
+    "name": "Docs Reader",
+    "edition": "202601",
+    "version": "0.3.1",
+    "min_app_version": "1.0.0",
+    "min_sdk_version": "0.1.0",
+    "tagline": "Read Google Docs on your EvenHub",
+    "description": "Select documents from your Google Drive and read them seamlessly on your glasses.",
+    "author": "sYamcs",
+    "entrypoint": "index.html",
+    "supported_languages": [
+        "en",
+        "ja"
+    ],
+    "permissions": [
+        {
+            "name": "network",
+            "desc": "Access Google Drive and Docs APIs to retrieve your documents."
+        },
+        {
+            "name": "network",
+            "desc": "Access Google Accounts for authentication and syncing."
+        }
+    ]
+}

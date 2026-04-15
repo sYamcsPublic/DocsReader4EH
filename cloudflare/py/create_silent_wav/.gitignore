@@ -1,0 +1,12 @@
+# Pythonの一時キャッシュ
+__pycache__/
+*.py[cod]
+
+# 仮想環境の実体
+venv/
+.venv/
+env/
+
+# OSのゴミファイル
+.DS_Store
+Thumbs.db

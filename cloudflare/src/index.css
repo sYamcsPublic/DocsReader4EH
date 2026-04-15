@@ -1,0 +1,34 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg-color: #fafafa;
+  background-color: var(--bg-color);
+  color-scheme: light dark;
+}
+
+:root.dark {
+  --bg-color: #050505;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: var(--bg-color);
+  font-family: 'Noto Sans JP', sans-serif !important;
+  transition: background-color 0.3s ease;
+}
+
+* {
+  font-family: 'Noto Sans JP', sans-serif !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

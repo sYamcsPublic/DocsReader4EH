@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/hud/page-manager.ts","./src/hud/pages/file-list-page.ts","./src/hud/pages/loading-page.ts","./src/hud/pages/message-page.ts","./src/hud/pages/reader-page.ts","./src/lib/google-drive.ts","./src/lib/simulator-helper.ts"],"version":"5.9.3"}
