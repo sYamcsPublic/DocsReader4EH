@@ -244,8 +244,8 @@ function App() {
       });
       const prefix = `
         <div class="text-[10px] text-zinc-500 dark:text-zinc-500 mb-6 p-3 bg-zinc-100 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800">
-          <p>This content is being displayed from <span class="break-all font-mono opacity-80">https://raw.githubusercontent.com/sYamcsPublic/DocsReader4EH/refs/heads/main/README.md</span>.</p>
-          <p class="mt-1">ここでは <span class="break-all font-mono opacity-80">https://raw.githubusercontent.com/sYamcsPublic/DocsReader4EH/refs/heads/main/README.md</span> の内容を表示しています。</p>
+          <p>This content is being displayed from <span class="break-all font-mono opacity-80">https://github.com/sYamcsPublic/DocsReader4EH/blob/main/README.md</span>.</p>
+          <p class="mt-1">ここでは <span class="break-all font-mono opacity-80">https://github.com/sYamcsPublic/DocsReader4EH/blob/main/README.md</span> の内容を表示しています。</p>
         </div>
       `;
       setHelpContent(prefix + doc.body.innerHTML);
