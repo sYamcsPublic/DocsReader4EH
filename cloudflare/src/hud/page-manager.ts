@@ -17,6 +17,7 @@ export abstract class BasePage {
   public isActive: boolean = true;
   public viewMode: GlassViewMode = GlassViewMode.NORMAL;
   public batteryLevel: number = 100; // Default to 100
+  public get isCacheEnabled(): boolean { return localStorage.getItem('g_cache_enabled') !== 'false'; }
   public pageType: string = "BasePage";
   protected bridge!: EvenAppBridge;
   protected navigate!: (page: BasePage) => Promise<boolean>;
@@ -158,6 +159,16 @@ export class PageManager {
       console.warn("Failed to get initial device info:", e);
     }
 
+    // Restore saved view mode
+    let savedMode = localStorage.getItem('g_glass_view_mode') as GlassViewMode;
+    if (savedMode === GlassViewMode.HIDDEN) {
+      savedMode = GlassViewMode.AR; // Start in 1-line mode if closed in hidden mode
+    }
+    if (savedMode && Object.values(GlassViewMode).includes(savedMode)) {
+      this.viewMode = savedMode;
+      console.log(`[PageManager] Restored viewMode: ${this.viewMode}`);
+    }
+
     this.bridge.onDeviceStatusChanged(async (status: any) => {
       console.log(`📱 Device status changed: ${JSON.stringify(status)}`);
       
@@ -256,6 +267,7 @@ export class PageManager {
       } else {
         this.viewMode = GlassViewMode.NORMAL;
       }
+      localStorage.setItem('g_glass_view_mode', this.viewMode);
       await this.renderCurrentMode();
     }
     
@@ -280,7 +292,7 @@ export class PageManager {
     }
 
     if (this.viewMode === GlassViewMode.AR) {
-      status += " (AR Mode)";
+      status += " (1Line)";
     } else if (this.viewMode === GlassViewMode.HIDDEN) {
       status += " (Hidden)";
     }
@@ -288,26 +300,22 @@ export class PageManager {
     this.onStatusUpdate(status);
   }
 
-  private async renderCurrentMode() {
-    if (!this.currentPage) return;
-    this.currentPage.viewMode = this.viewMode;
-    const rendered = this.currentPage.render();
+  private applyViewModeFilter(rendered: PageRenderResult): PageRenderResult {
+    if (this.viewMode === GlassViewMode.NORMAL) return rendered;
 
     if (this.viewMode === GlassViewMode.AR) {
-        // Keep ONLY the header containers (Main header, Battery, Mode)
+        // Keep ONLY the header containers (Main header, Battery, Mode, Cache)
         if (rendered.textObject) {
-            // Keep containers that include "hdr" or "header" or "battery" or "mode"
-            // Actually, we'll just standardize on "hdr" in the page classes.
             rendered.textObject = rendered.textObject.filter(o => 
               o.containerName && (
                 o.containerName.includes("hdr") || 
                 o.containerName.includes("header") || 
                 o.containerName.includes("battery") || 
-                o.containerName.includes("mode")
+                o.containerName.includes("mode") ||
+                o.containerName.includes("cache")
               )
             );
             // CRITICAL: Exactly ONE container must have isEventCapture: 1.
-            // Priority: containerName includes "mode"
             let captureIdx = rendered.textObject.findIndex(o => o.containerName && o.containerName.includes("mode"));
             if (captureIdx === -1) captureIdx = 0;
 
@@ -336,6 +344,13 @@ export class PageManager {
         rendered.imageObject = [];
         rendered.containerTotalNum = 1;
     }
+    return rendered;
+  }
+
+  private async renderCurrentMode() {
+    if (!this.currentPage) return;
+    this.currentPage.viewMode = this.viewMode;
+    const rendered = this.applyViewModeFilter(this.currentPage.render());
 
     await this.bridge.rebuildPageContainer(new RebuildPageContainer(rendered));
     await new Promise<void>(resolve => {
@@ -352,7 +367,7 @@ export class PageManager {
     }
     this.currentPage = page;
     page.isActive = true;
-    page.viewMode = GlassViewMode.NORMAL;
+    page.viewMode = this.viewMode;
     page.batteryLevel = this.batteryLevel; // Sync battery level to new page
     page.init(
         this.load.bind(this), 
@@ -362,20 +377,15 @@ export class PageManager {
             if (key === 'g_auto_enabled') {
               this.refreshAutoUpdate();
             }
-            // Only forward to App.tsx if it's a setting the phone UI needs to know about.
-            // g_auto_enabled changes from glasses scroll are handled above but NOT forwarded
-            // to App.tsx (to avoid overwriting g_auto_allowed phone-side setting).
-            if (this.onSettingsChanged && key !== 'g_auto_enabled') {
+            if (this.onSettingsChanged) {
               this.onSettingsChanged(key, value);
             }
         }
     );
 
-    
-    this.viewMode = GlassViewMode.NORMAL; // Reset view mode on new page load
     this.updateStatus();
 
-    const rendered = page.render();
+    const rendered = this.applyViewModeFilter(page.render());
 
     if (isInitial) {
       const result = await this.bridge.createStartUpPageContainer(

@@ -18,13 +18,13 @@ import {
   FileText,
   LayoutList,
   Copy,
-  Check
+  Check,
+  HelpCircle
 } from 'lucide-react';
 import { setSimulatorBannerVisible } from './lib/simulator-helper';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { MessagePage } from './hud/pages/message-page';
 import { OsEventTypeList } from '@evenrealities/even_hub_sdk';
 
 function cn(...inputs: ClassValue[]) {
@@ -47,7 +47,12 @@ function App() {
   const [currentFiles, setCurrentFiles] = useState<any[]>([]);
   const [syncLoading, setSyncLoading] = useState(false);
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>((localStorage.getItem('g_color_theme') as any) || 'system');
+  const [isAutoAllowed, setIsAutoAllowed] = useState(localStorage.getItem('g_auto_allowed') === 'true');
   const [isAutoEnabled, setIsAutoEnabled] = useState(localStorage.getItem('g_auto_enabled') === 'true');
+  const [isCacheEnabled, setIsCacheEnabled] = useState(localStorage.getItem('g_cache_enabled') !== 'false');
+  const [showHelp, setShowHelp] = useState(false);
+  const [helpContent, setHelpContent] = useState("");
+  const [isHelpLoading, setIsHelpLoading] = useState(false);
 
   // State for copy feedback
   const [isTokenCopied, setIsTokenCopied] = useState(false);
@@ -145,12 +150,13 @@ function App() {
     localStorage.setItem('g_client_id', clientId);
     localStorage.setItem('g_client_secret', clientSecret);
     localStorage.setItem('g_folder_id', folderId);
-    // g_auto_allowed = phone-level permission; g_auto_enabled = current glasses state
-    // Both are synced to the phone setting; glasses scroll can change g_auto_enabled
-    // independently without overwriting g_auto_allowed.
-    localStorage.setItem('g_auto_allowed', isAutoEnabled.toString());
+    localStorage.setItem('g_auto_allowed', isAutoAllowed.toString());
+    localStorage.setItem('g_cache_enabled', isCacheEnabled.toString());
+  }, [clientId, clientSecret, folderId, isAutoAllowed, isCacheEnabled]);
+
+  useEffect(() => {
     localStorage.setItem('g_auto_enabled', isAutoEnabled.toString());
-  }, [clientId, clientSecret, folderId, isAutoEnabled]);
+  }, [isAutoEnabled]);
 
   // Handle Google login callback / Refresh
   useEffect(() => {
@@ -211,6 +217,45 @@ function App() {
     }
   };
 
+  const openHelp = async () => {
+    setShowHelp(true);
+    if (helpContent) return;
+    setIsHelpLoading(true);
+    try {
+      const readmeText = await (await fetch("https://raw.githubusercontent.com/sYamcsPublic/DocsReader4EH/refs/heads/main/README.md")).text();
+      const response = await fetch("https://api.github.com/markdown", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: readmeText })
+      });
+      let html = await response.text();
+      // Strip external links and keep only their text (with some basic styling)
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const anchors = Array.from(doc.querySelectorAll('a'));
+      anchors.forEach(a => {
+        const href = a.getAttribute('href');
+        if (href && href.startsWith('http')) {
+          const span = document.createElement('span');
+          span.className = 'break-all';
+          span.innerHTML = a.innerHTML;
+          a.replaceWith(span);
+        }
+      });
+      const prefix = `
+        <div class="text-[10px] text-zinc-500 dark:text-zinc-500 mb-6 p-3 bg-zinc-100 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <p>This content is being displayed from <span class="break-all font-mono opacity-80">https://raw.githubusercontent.com/sYamcsPublic/DocsReader4EH/refs/heads/main/README.md</span>.</p>
+          <p class="mt-1">ここでは <span class="break-all font-mono opacity-80">https://raw.githubusercontent.com/sYamcsPublic/DocsReader4EH/refs/heads/main/README.md</span> の内容を表示しています。</p>
+        </div>
+      `;
+      setHelpContent(prefix + doc.body.innerHTML);
+    } catch (err) {
+      setHelpContent("<p>Failed to load help content. Please check your internet connection.</p>");
+    } finally {
+      setIsHelpLoading(false);
+    }
+  };
+
   // --- Automatic Bridge Connection removed (As requested: User action only) ---
 
   useEffect(() => {
@@ -257,26 +302,29 @@ function App() {
         }
 
         const missing: string[] = [];
-        if (!clientId) missing.push("GCP Client ID");
-        if (!clientSecret) missing.push("GCP Client Secret");
-        if (!folderId) missing.push("Folder ID");
-        if (!user) missing.push("Google Login");
+        if (!clientId) missing.push("Client ID / クライアントID");
+        if (!clientSecret) missing.push("Client Secret / クライアントシークレット");
+        if (!folderId) missing.push("Folder ID / フォルダID");
+        if (!user) missing.push("Google Login / Googleログイン");
+
+        const pageManager = new PageManager(bridge, setStatus, (k, v) => {
+          if (k === 'g_auto_enabled') setIsAutoEnabled(v === 'true');
+        });
+        pageManagerRef.current = pageManager;
 
         if (missing.length > 0) {
-          const missingJp = missing.map(m => {
-            if (m === "GCP Client ID") return "・GCPクライアントID";
-            if (m === "GCP Client Secret") return "・GCPクライアントシークレット";
-            if (m === "Folder ID") return "・フォルダID";
-            if (m === "Google Login") return "・Googleログイン";
-            return `・${m}`;
-          });
-          const errMsg = "設定が未完了です:\n" + missingJp.join("\n") + "\nスマホ側で設定を完了してください。";
-          console.error(`[App.tsx] Auto-sync failed: ${missing.join(", ")}`);
+          const errorFiles = missing.map(m => ({
+            id: `err-${m}`,
+            name: `⚠️ UNSET: ${m}`,
+          }));
 
-          const pageManager = new PageManager(bridge);
-          pageManagerRef.current = pageManager;
-          await pageManager.init(new MessagePage(errMsg));
-          setStatus("Setup required (Glasses notified)");
+          const initialListPage = new FileListPage(
+            errorFiles,
+            async () => "Please complete setup in smartphone app. / スマートフォンアプリで設定を完了してください。"
+          );
+
+          await pageManager.init(initialListPage);
+          setStatus("Setup required (Error list shown on glasses)");
         } else {
           // All good, auto-sync!
           console.log(`[App.tsx] Auto-syncing triggered by glassesMenu launch`);
@@ -380,42 +428,83 @@ function App() {
     updateTimestamp();
     const CACHE_KEY = 'g_content_cache';
     const MAX_CACHE = 5;
-    const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
-    let cache: any[] = JSON.parse(cacheRaw);
-    const cachedItem = cache.find(c => c.id === file.id);
-    if (cachedItem && !cachedItem.content.includes("Export Error")) return cachedItem.content;
+
+    if (isCacheEnabled) {
+      const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
+      let cache: any[] = JSON.parse(cacheRaw);
+      const cachedItem = cache.find(c => c.id === file.id);
+      if (cachedItem && !cachedItem.content.includes("Export Error")) return cachedItem.content;
+    }
+
     const rawText = await driveService.getDocContent(file.id);
     if (rawText.startsWith("Export Error") || rawText.startsWith("Network Error") || rawText.startsWith("AUTH_EXPIRED")) return rawText; // Don't cache errors
     const text = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
-    const newCache = [{ id: file.id, content: text }, ...cache.filter(c => c.id !== file.id)].slice(0, MAX_CACHE);
-    localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+
+    if (isCacheEnabled) {
+      const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
+      let cache: any[] = JSON.parse(cacheRaw);
+      const newCache = [{ id: file.id, content: text }, ...cache.filter(c => c.id !== file.id)].slice(0, MAX_CACHE);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+    }
     return text;
   };
 
-  const syncFilesToGlasses = async () => {
+  const handleHelpClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const anchor = target.closest('a');
+    if (anchor) {
+      const href = anchor.getAttribute('href');
+      if (href) {
+        if (href.startsWith('http')) {
+          e.preventDefault();
+          e.stopPropagation();
+          // External links are disabled as requested
+        } else if (href.startsWith('#')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = href.substring(1).toLowerCase();
+          // GitHub Markdown API prepends 'user-content-' to actual IDs
+          const targetId = `user-content-${id}`;
+          const element = document.getElementById(targetId) ||
+            document.getElementById(id) ||
+            document.getElementsByName(targetId)[0];
+
+          if (element) {
+            // Find the scrollable container (the drawer)
+            const container = anchor.closest('.overflow-y-auto');
+            if (container) {
+              const rect = element.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+              const offset = rect.top - containerRect.top + container.scrollTop - 20; // 20px padding
+              container.scrollTo({
+                top: offset,
+                behavior: 'smooth'
+              });
+            } else {
+              element.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        }
+      }
+    }
+  };
+
+  const syncFilesToGlasses = async (forceDemo: boolean = false) => {
     if (!bridge) {
       await connectToBridge();
       return;
     }
 
-    if (!user) {
-      alert("Please login to Google first to sync your documents.");
-      return;
-    }
-
-    if (!folderId) {
-      alert("Please set Google Drive Folder ID in settings.");
-      setShowSettings(true);
-      return;
-    }
+    const missing: string[] = [];
+    if (!clientId) missing.push("Client ID / クライアントID");
+    if (!clientSecret) missing.push("Client Secret / クライアントシークレット");
+    if (!folderId) missing.push("Folder ID / フォルダID");
+    if (!user) missing.push("Google Login / Googleログイン");
 
     setIsLoading(true);
-    setStatus("Fetching files...");
-    try {
-      const fetchedFiles = await driveService.listFiles(folderId);
-      fetchedFiles.sort((a: any, b: any) => a.name.localeCompare(b.name));
-      setCurrentFiles(fetchedFiles);
+    setStatus(forceDemo ? "Launching Demo Mode..." : "Syncing...");
 
+    try {
       // Clean up previous PageManager if any to stop old timers and audio
       if (pageManagerRef.current) {
         pageManagerRef.current.destroy();
@@ -425,34 +514,73 @@ function App() {
         (glassesStatus) => {
           setStatus(glassesStatus);
         },
-        (_key, _value) => {
-          // g_auto_enabled changes from glasses scroll are intentionally NOT forwarded
-          // to App.tsx React state, to avoid overwriting the phone-level g_auto_allowed.
-          // The phone settings toggle (isAutoEnabled) is the authoritative phone permission.
+        (key, value) => {
+          if (key === 'g_auto_enabled') setIsAutoEnabled(value === 'true');
         }
       );
       pageManagerRef.current = pageManager;
+
+      if (forceDemo || missing.length > 0) {
+        let displayErrorFiles = [];
+        if (missing.length > 0) {
+          displayErrorFiles = missing.map(m => ({
+            id: `err-${m}`,
+            name: `⚠️ UNSET: ${m}`,
+          }));
+        } else {
+          displayErrorFiles = [
+            { id: "demo-1", name: "✨ Demo: File 1" },
+            { id: "demo-2", name: "✨ Demo: File 2" },
+          ];
+        }
+
+        const initialListPage = new FileListPage(
+          displayErrorFiles,
+          async () => (missing.length > 0 ? "Setup required. / 設定を完了してください。" : "Demo Mode. / 体験モードです。"),
+          undefined
+        );
+
+        await pageManager.init(initialListPage);
+        setStatus(missing.length > 0 ? `Missing components: ${missing.length}` : "Demo HUD running");
+        setIsLoading(false);
+        setIsGlassesActive(true);
+        return;
+      }
+
+      const fetchedFiles = await driveService.listFiles(folderId);
+      fetchedFiles.sort((a: any, b: any) => a.name.localeCompare(b.name));
+      setCurrentFiles(fetchedFiles);
 
       const onFileSelected = async (file: any) => {
         const CACHE_KEY = 'g_content_cache';
         const MAX_CACHE = 5;
 
         try {
-          const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
-          let cache: { id: string, content: string }[] = JSON.parse(cacheRaw);
-          const cachedItem = cache.find(c => c.id === file.id);
-          if (cachedItem && !cachedItem.content.includes("Export Error")) {
-            const updatedCache = [cachedItem, ...cache.filter(c => c.id !== file.id)].slice(0, MAX_CACHE);
-            localStorage.setItem(CACHE_KEY, JSON.stringify(updatedCache));
-            return cachedItem.content;
+          if (isCacheEnabled) {
+            const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
+            let cache: { id: string, content: string }[] = JSON.parse(cacheRaw);
+            const cachedItem = cache.find(c => c.id === file.id);
+            if (cachedItem && !cachedItem.content.includes("Export Error")) {
+              const updatedCache = [cachedItem, ...cache.filter(c => c.id !== file.id)].slice(0, MAX_CACHE);
+              localStorage.setItem(CACHE_KEY, JSON.stringify(updatedCache));
+              return cachedItem.content;
+            }
           }
+
           setStatus(`Fetching from Drive: ${file.name}...`);
           const rawText = await driveService.getDocContent(file.id);
           if (rawText.startsWith("Export Error") || rawText.startsWith("Network Error") || rawText.startsWith("AUTH_EXPIRED")) return rawText; // Don't cache errors
           const text = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
-          const newCache = [{ id: file.id, content: text }, ...cache.filter(c => c.id !== file.id)].slice(0, MAX_CACHE);
-          localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
-          setStatus("Document loaded and cached");
+
+          if (isCacheEnabled) {
+            const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
+            let cache: { id: string, content: string }[] = JSON.parse(cacheRaw);
+            const newCache = [{ id: file.id, content: text }, ...cache.filter(c => c.id !== file.id)].slice(0, MAX_CACHE);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+            setStatus("Document loaded and cached");
+          } else {
+            setStatus("Document loaded (nocache)");
+          }
           return text;
         } catch (err) {
           handleError(err, "Cache/Fetch error");
@@ -463,10 +591,18 @@ function App() {
       const lastFileId = localStorage.getItem('g_last_file_id');
       const lastPageType = localStorage.getItem('g_last_page_type') || 'list';
 
+      const onRefreshFiles = async () => {
+        const fetchedFiles = await driveService.listFiles(folderId);
+        fetchedFiles.sort((a: any, b: any) => a.name.localeCompare(b.name));
+        setCurrentFiles(fetchedFiles);
+        return fetchedFiles;
+      };
+
       const initialListPage = new FileListPage(
         fetchedFiles,
         onFileSelected,
-        lastFileId || undefined
+        lastFileId || undefined,
+        onRefreshFiles
       );
 
       let initialPage: any = initialListPage;
@@ -557,6 +693,12 @@ function App() {
             >
               <SettingsIcon className="w-5 h-5" />
             </button>
+            <button
+              onClick={openHelp}
+              className="p-2 bg-white dark:bg-zinc-900/50 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
           </div>
         </header>
 
@@ -595,6 +737,37 @@ function App() {
                     <LogIn className="w-5 h-5" />
                     Continue with Google
                   </button>
+
+                  {(isConnectable && isEvenHubMode) ? (
+                    <button
+                      onClick={async () => {
+                        if (!bridge) {
+                          const b = await connectToBridge();
+                          if (b) {
+                            setIsLoading(true);
+                            setTimeout(async () => {
+                              await syncFilesToGlasses(true);
+                              setIsLoading(false);
+                            }, 300);
+                          }
+                        } else if (isGlassesActive) {
+                          await closeGlassesApp();
+                        } else {
+                          await syncFilesToGlasses(true);
+                        }
+                      }}
+                      disabled={isLoading}
+                      className={cn(
+                        "w-full h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                        bridge && isGlassesActive
+                          ? "bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500/20"
+                          : "bg-zinc-100 dark:bg-black/40 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
+                      )}
+                    >
+                      <LayoutList className="w-4 h-4" />
+                      {bridge && isGlassesActive ? "Close Demo HUD Mode" : "Try Demo HUD Mode"}
+                    </button>
+                  ) : null}
 
                   {!clientId && (
                     <button
@@ -696,6 +869,7 @@ function App() {
                         <ChevronRight className={cn("w-5 h-5", bridge ? (isGlassesActive ? "text-white/50" : "text-black/50") : "text-emerald-500/50")} />
                       </button>
                     ) : null}
+
                   </div>
                 </div>
               </motion.div>
@@ -830,10 +1004,38 @@ function App() {
                             setStatus('Cache cleared');
                           }
                         }}
-                        className="w-full h-12 bg-white dark:bg-black border border-red-200 dark:border-red-900/50 text-red-500 rounded-xl px-4 font-bold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shadow-sm flex items-center justify-center"
+                        className="w-full h-12 bg-white dark:bg-black border border-red-200 dark:border-red-900/50 text-red-500 rounded-xl px-4 font-bold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shadow-sm flex items-center justify-center mb-4"
                       >
                         Clear Cache
                       </button>
+
+                      <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                        <div className="space-y-0.5">
+                          <span className="text-sm font-bold">{isCacheEnabled ? "Cache Documents" : "No Cache Mode"}</span>
+                          <p className="text-[10px] text-zinc-500">Enable/Disable Google Docs caching.</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const next = !isCacheEnabled;
+                            setIsCacheEnabled(next);
+                            localStorage.setItem('g_cache_enabled', next.toString());
+                          }}
+                          className={cn(
+                            "w-12 h-6 rounded-full transition-all relative flex items-center px-1",
+                            isCacheEnabled ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
+                            isCacheEnabled ? "translate-x-6" : "translate-x-0"
+                          )} />
+                        </button>
+                      </div>
+                      {!isCacheEnabled && (
+                        <p className="text-[10px] text-red-500/80 mt-2 px-1 leading-relaxed">
+                          * If you select "No Cache", it will take more time for communication because you always get the latest state of Google Drive. Also, reading position is saved but not used. It's always displayed from the beginning of the file. and, The file list will also always retrieve the most up-to-date information.
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -881,23 +1083,30 @@ function App() {
                     <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block mt-2">Enable Auto Mode</label>
                     <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
                       <div className="space-y-0.5">
-                        <span className="text-sm font-bold">{isAutoEnabled ? "Auto Mode Enabled" : "Manual Mode (Locked)"}</span>
+                        <span className="text-sm font-bold">{isAutoAllowed ? "Auto Mode Allowed" : "Manual Mode (Locked)"}</span>
                         <p className="text-[10px] text-zinc-500">Enabling Auto Mode increases battery consumption.</p>
                       </div>
                       <button
-                        onClick={() => setIsAutoEnabled(!isAutoEnabled)}
+                        onClick={() => {
+                          const next = !isAutoAllowed;
+                          setIsAutoAllowed(next);
+                          if (!next) {
+                            setIsAutoEnabled(false);
+                            localStorage.setItem('g_auto_enabled', 'false');
+                          }
+                        }}
                         className={cn(
                           "w-12 h-6 rounded-full transition-all relative flex items-center px-1",
-                          isAutoEnabled ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700"
+                          isAutoAllowed ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700"
                         )}
                       >
                         <div className={cn(
                           "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
-                          isAutoEnabled ? "translate-x-6" : "translate-x-0"
+                          isAutoAllowed ? "translate-x-6" : "translate-x-0"
                         )} />
                       </button>
                     </div>
-                    {isAutoEnabled && (
+                    {isAutoAllowed && (
                       <p className="text-[10px] text-emerald-500/80 mt-2 px-1 leading-relaxed">
                         * Please enable auto-scroll on the glasses while the phone screen is active. It will continue working even if you lock the screen afterward.
                       </p>
@@ -910,17 +1119,68 @@ function App() {
         )}
       </AnimatePresence>
 
+      {/* Help Drawer */}
+      <AnimatePresence>
+        {showHelp && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHelp(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[290]"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-x-0 bottom-0 z-[300] bg-white dark:bg-[#0a0a0a] border-t border-zinc-200 dark:border-zinc-800 p-8 rounded-t-[32px] shadow-2xl overflow-y-auto overflow-x-hidden max-h-[92vh] safe-bottom no-scrollbar"
+            >
+              <div className="max-w-md mx-auto">
+                <div className="w-12 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full mx-auto mb-8" />
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold">Help & Guide</h2>
+                  <button onClick={() => setShowHelp(false)} className="text-zinc-600 dark:text-zinc-400 text-sm font-medium">Close</button>
+                </div>
+                <div className="readme-content no-scrollbar help-content px-1">
+                  {isHelpLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 text-zinc-500">
+                      <RefreshCw className="w-8 h-8 animate-spin" />
+                      <p className="text-[10px] uppercase tracking-widest font-black">Loading README...</p>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={handleHelpClick}
+                      dangerouslySetInnerHTML={{ __html: helpContent }}
+                    />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Phone Reader Overlay */}
       <AnimatePresence>
         {isPhoneReaderOpen && (
           <MobileReader
             files={currentFiles}
-            onClose={() => setIsPhoneReaderOpen(false)}
-            onFetch={onPhoneFileSelected}
             initialScrollSpeed={scrollSpeed}
             isAutoEnabled={isAutoEnabled}
-            onUpdateProgress={updateTimestamp}
+            isAutoAllowed={isAutoAllowed}
+            isCacheEnabled={isCacheEnabled}
+            onAutoModeChange={(mode: boolean) => setIsAutoEnabled(mode)}
+            onClose={() => setIsPhoneReaderOpen(false)}
+            onFetch={onPhoneFileSelected}
+            onUpdateProgress={() => setStatus("Updated Progress")}
             handleError={handleError}
+            onRefreshFiles={async () => {
+              const fetchedFiles = await driveService.listFiles(folderId);
+              fetchedFiles.sort((a: any, b: any) => a.name.localeCompare(b.name));
+              setCurrentFiles(fetchedFiles);
+            }}
           />
         )}
       </AnimatePresence>
@@ -934,7 +1194,7 @@ function App() {
 }
 
 // --- Mobile Reader Component ---
-function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabled, onUpdateProgress, handleError }: any) {
+function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabled, isAutoAllowed, isCacheEnabled, onUpdateProgress, handleError, onRefreshFiles, onAutoModeChange }: any) {
   const [viewMode, setViewMode] = useState<'list' | 'reader'>(() => {
     const lastPageType = localStorage.getItem('g_last_page_type');
     return (lastPageType === 'reader') ? 'reader' : 'list';
@@ -948,14 +1208,14 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
 
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuto, setIsAuto] = useState(isAutoEnabled);
+  const [isAuto, setIsAuto] = useState(isAutoEnabled && isAutoAllowed);
   const [timeLeft, setTimeLeft] = useState(initialScrollSpeed);
   const [currentRatio, setCurrentRatio] = useState<number | undefined>(undefined);
 
   // Sync internal state with prop changes (e.g. from glasses)
   useEffect(() => {
-    setIsAuto(isAutoEnabled);
-  }, [isAutoEnabled]);
+    setIsAuto(isAutoEnabled && isAutoAllowed);
+  }, [isAutoEnabled, isAutoAllowed]);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const selectedRef = React.useRef<HTMLButtonElement>(null);
   const isJumpingRef = React.useRef(false);
@@ -982,7 +1242,7 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
           scrollRef.current.scrollTop = scrollHeight - clientHeight;
         } else {
           const positions = JSON.parse(localStorage.getItem('g_reading_positions') || '{}');
-          const ratio = positions[file.id] || 0;
+          const ratio = isCacheEnabled ? (positions[file.id] || 0) : 0;
           setCurrentRatio(ratio);
           // Compensate for layout differences: scroll to (ratio * depth) - half screen
           const targetScroll = ratio * (scrollHeight - clientHeight);
@@ -1073,9 +1333,14 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
         className="fixed inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-2xl z-[100] bg-zinc-50 dark:bg-[#050505] flex flex-col font-['Noto_Sans_JP'] border-x border-zinc-200 dark:border-zinc-900 shadow-2xl"
         style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="p-4 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 backdrop-blur-md">
+        <div className="p-4 bg-zinc-100 dark:bg-zinc-800/80 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between shadow-sm relative z-10 backdrop-blur-xl">
           <div className="flex items-center gap-4">
-            <button onClick={onClose} className="p-1 -ml-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+            <button
+              onClick={async () => {
+                onClose();
+              }}
+              className="p-1 -ml-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+            >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h2 className="text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Documents List</h2>
@@ -1104,7 +1369,7 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
                   <span className={cn("font-bold truncate", currentIdx === idx ? "text-emerald-400" : "text-zinc-800 dark:text-zinc-300")}>{file.name}</span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {currentIdx === idx && ratio !== undefined && (
+                  {currentIdx === idx && ratio !== undefined && isCacheEnabled && (
                     <span className="text-[10px] text-zinc-600 dark:text-zinc-300 font-bold tracking-wider bg-zinc-200 dark:bg-zinc-700/80 px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600">
                       {(ratio * 100).toFixed(1)}%
                     </span>
@@ -1132,12 +1397,23 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
     >
       <div className="p-4 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 backdrop-blur-md">
         <div className="flex items-center gap-3 overflow-hidden">
-          <button onClick={() => setViewMode('list')} className="p-1 -ml-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"><ArrowLeft className="w-5 h-5" /></button>
+          <button
+            onClick={async () => {
+              setViewMode('list');
+              localStorage.setItem('g_last_page_type', 'list');
+              if (!isCacheEnabled && onRefreshFiles) {
+                await onRefreshFiles();
+              }
+            }}
+            className="p-1 -ml-1 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <div className="overflow-hidden">
             <h2 className="text-base font-bold truncate text-zinc-900 dark:text-zinc-100 flex items-baseline gap-2">
               {files[currentIdx]?.name}
               <span className="text-xs font-normal text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                {currentRatio !== undefined ? `[${(currentRatio * 100).toFixed(1)}%]` : ''}
+                {currentRatio !== undefined && isCacheEnabled ? `[${(currentRatio * 100).toFixed(1)}%]` : ''}
               </span>
             </h2>
             {isAuto && (
@@ -1149,17 +1425,24 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
         </div>
         <button
           onClick={() => {
+            if (!isAutoAllowed) {
+              alert("Auto mode is locked in settings.");
+              return;
+            }
             const nextMode = !isAuto;
             setIsAuto(nextMode);
+            localStorage.setItem('g_auto_enabled', nextMode.toString());
+            if (onAutoModeChange) onAutoModeChange(nextMode);
             if (nextMode) {
               setTimeLeft(initialScrollSpeed);
             }
           }}
           className={cn("px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all outline-none",
-            isAuto ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+            isAuto ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400",
+            !isAutoAllowed && "opacity-50"
           )}
         >
-          {isAuto ? `Auto (${timeLeft}s)` : "Manual"}
+          {!isAutoAllowed ? "Manual(Locked)" : (isAuto ? `Auto (${timeLeft}s)` : "Manual")}
         </button>
       </div>
 

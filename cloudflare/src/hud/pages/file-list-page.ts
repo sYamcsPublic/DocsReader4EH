@@ -15,6 +15,7 @@ export interface GoogleFile {
 export class FileListPage extends BasePage {
   private files: GoogleFile[];
   private onFileSelected: (file: GoogleFile) => Promise<string>;
+  private onRefreshFiles?: () => Promise<GoogleFile[]>;
   private selectedIndex: number = 0;
   private cachedPositions: Record<string, number> = {};
 
@@ -26,10 +27,12 @@ export class FileListPage extends BasePage {
   private static readonly ID_BODY = 3;
   private static readonly ID_HEADER_MODE = 4;
 
-  constructor(files: GoogleFile[], onFileSelected: (file: GoogleFile) => Promise<string>, initialFileId?: string) {
+
+  constructor(files: GoogleFile[], onFileSelected: (file: GoogleFile) => Promise<string>, initialFileId?: string, onRefreshFiles?: () => Promise<GoogleFile[]>) {
     super();
     this.files = [...files].sort((a, b) => a.name.localeCompare(b.name));
     this.onFileSelected = onFileSelected;
+    this.onRefreshFiles = onRefreshFiles;
 
     if (initialFileId) {
       const idx = this.files.findIndex(f => f.id === initialFileId);
@@ -107,9 +110,21 @@ export class FileListPage extends BasePage {
     // g_auto_allowed: phone-level permission ("Enable Auto Mode" setting)
     // g_auto_enabled: current glasses auto state (toggled by glasses scroll)
     const isAutoAllowed = localStorage.getItem('g_auto_allowed') === 'true';
-    if (!isAutoAllowed) return "M:lck";
     const isAutoActive = localStorage.getItem('g_auto_enabled') === 'true';
+
+    if (!isAutoAllowed) return "M:lck";
     return isAutoActive ? "A" : "M";
+  }
+
+  private getCacheText(): string {
+    return this.isCacheEnabled ? "C" : "NC";
+  }
+
+  private getCacheBattText(): string {
+    const cache = this.getCacheText();
+    const batt = this.getBatteryIcon();
+    const pad = cache === "C" ? "       " : "     ";
+    return `${cache}${pad}${batt}`;
   }
 
 
@@ -123,7 +138,7 @@ export class FileListPage extends BasePage {
     for (let i = start; i < Math.min(start + DISPLAY_COUNT, this.files.length); i++) {
       const file = this.files[i];
       const ratio = this.cachedPositions[file.id];
-      const ratioStr = i === this.selectedIndex && ratio !== undefined ? ` [${(ratio * 100).toFixed(1)}%]` : "";
+      const ratioStr = (this.isCacheEnabled && i === this.selectedIndex && ratio !== undefined) ? ` [${(ratio * 100).toFixed(1)}%]` : "";
       const prefixStr = i === this.selectedIndex ? "> " : "  ";
 
       // Calculate widths of prefix and ratio to find available space for filename
@@ -144,7 +159,7 @@ export class FileListPage extends BasePage {
         new TextContainerProperty({
           xPosition: 4,
           yPosition: 2,
-          width: 380, // Allow more space for date
+          width: 380,
           height: 28,
           borderWidth: 0,
           containerID: FileListPage.ID_HEADER_DATE,
@@ -153,26 +168,26 @@ export class FileListPage extends BasePage {
           content: this.getFormattedDate(),
         }),
         new TextContainerProperty({
-          xPosition: 525, // Push percentage to far right edge
+          xPosition: 390,
           yPosition: 2,
-          width: 48,
-          height: 28,
-          borderWidth: 0,
-          containerID: FileListPage.ID_HEADER_BATT,
-          containerName: "list-hdr-batt",
-          isEventCapture: 0,
-          content: this.getBatteryIcon(),
-        }),
-        new TextContainerProperty({
-          xPosition: 390, // Same as ReaderPage
-          yPosition: 2,
-          width: 130,
+          width: 83,
           height: 28,
           borderWidth: 0,
           containerID: FileListPage.ID_HEADER_MODE,
           containerName: "list-hdr-mode",
           isEventCapture: 0,
           content: this.getModeText(),
+        }),
+        new TextContainerProperty({
+          xPosition: 474,
+          yPosition: 2,
+          width: 98,
+          height: 28,
+          borderWidth: 0,
+          containerID: FileListPage.ID_HEADER_BATT,
+          containerName: "list-hdr-batt",
+          isEventCapture: 0,
+          content: this.getCacheBattText(),
         }),
         new TextContainerProperty({
           xPosition: 4,
@@ -226,21 +241,21 @@ export class FileListPage extends BasePage {
       if (!this.isActive) return;
 
       await this.bridge.textContainerUpgrade(new TextContainerUpgrade({
-        containerID: FileListPage.ID_HEADER_BATT,
-        containerName: "list-hdr-batt",
-        contentOffset: 0,
-        contentLength: 10,
-        content: this.getBatteryIcon(),
-      }));
-
-      if (!this.isActive) return;
-
-      await this.bridge.textContainerUpgrade(new TextContainerUpgrade({
         containerID: FileListPage.ID_HEADER_MODE,
         containerName: "list-hdr-mode",
         contentOffset: 0,
         contentLength: 10,
         content: this.getModeText(),
+      }));
+
+      if (!this.isActive) return;
+
+      await this.bridge.textContainerUpgrade(new TextContainerUpgrade({
+        containerID: FileListPage.ID_HEADER_BATT,
+        containerName: "list-hdr-batt",
+        contentOffset: 0,
+        contentLength: 30,
+        content: this.getCacheBattText(),
       }));
     }
 
@@ -257,6 +272,21 @@ export class FileListPage extends BasePage {
 
   async afterRender() {
     this.refreshCache(); // Sync latest progress before showing
+
+    if (!this.isCacheEnabled && this.onRefreshFiles) {
+      try {
+        const oldId = this.files[this.selectedIndex]?.id;
+        const newFiles = await this.onRefreshFiles();
+        this.files = [...newFiles].sort((a, b) => a.name.localeCompare(b.name));
+        if (oldId) {
+          const idx = this.files.findIndex(f => f.id === oldId);
+          this.selectedIndex = idx !== -1 ? idx : 0;
+        }
+      } catch (e) {
+        console.error("Refresh failed", e);
+      }
+    }
+
     await new Promise(resolve => setTimeout(resolve, 300));
     await this.updateDisplay();
   }
@@ -332,8 +362,7 @@ export class FileListPage extends BasePage {
       this.selectedIndex,
       content,
       this,
-      this.onFileSelected,
-      false
+      this.onFileSelected
     );
     // Case 1: First navigate
     await this.navigate(readerPage);

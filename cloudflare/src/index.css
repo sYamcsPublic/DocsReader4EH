@@ -13,22 +13,133 @@
 
 body {
   margin: 0;
-  min-height: 100dvh;
+  min-height: 100vh;
   background-color: var(--bg-color);
-  font-family: 'Noto Sans JP', sans-serif !important;
   transition: background-color 0.3s ease;
 }
 
-* {
-  font-family: 'Noto Sans JP', sans-serif !important;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
 .no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* Help Content Typography */
+.help-content {
+  line-height: 1.8;
+  color: inherit;
+  overflow-x: hidden;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+}
+
+.help-content * {
+  box-sizing: border-box;
+}
+
+.help-content img, .help-content table, .help-content pre {
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+}
+
+.help-content h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  padding-bottom: 0.5rem;
+}
+
+.help-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.help-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.help-content p {
+  margin-bottom: 1.25rem;
+}
+
+.help-content ul, .help-content ol {
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
+.help-content li {
+  margin-bottom: 0.5rem;
+}
+
+.help-content code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+  word-break: break-all;
+}
+
+.dark .help-content code {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.help-content pre {
+  background: #1a1a1a;
+  color: #eee;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  overflow-x: hidden; /* No more horizontal scroll needed */
+  white-space: pre-wrap; /* Force wrap */
+  word-break: break-all; /* Ensure even long words break */
+  font-size: 0.85rem;
+  line-height: 1.5;
+  width: 100%;
+  max-width: 100%;
+}
+
+.help-content blockquote {
+  border-left: 4px solid #10b981;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.help-content hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .help-content hr {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.help-content a {
+  color: #10b981;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer !important;
+}
+
+.help-content a:hover {
+  opacity: 0.7;
+}
+
+.help-content h1, .help-content h2, .help-content h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
 }

@@ -1,7 +1,7 @@
 
 # Docs Reader for EvenHub
 
-Google Docs reader application for Even Realities G2 glasses.
+Google Docs reader application for Even Realities G2 glasses.  
 Even Realities G2 グラスで Google ドキュメントを閲覧するためのリーダーアプリです。
 
 - [English](#english)
@@ -12,6 +12,10 @@ Even Realities G2 グラスで Google ドキュメントを閲覧するための
 <a name="english"></a>
 
 # English
+
+> [!IMPORTANT]
+> **Behavior after PWA app version update**  
+> Immediately after a version update, the app may fail to start (e.g., the screen turns white or behaves unstably). If this occurs, please **restart the app** or **clear your browser cache and access it again**. The update will complete automatically upon restarting.
 
 ## 1. Features
 - **Google Drive Integration**: Set a specific folder in your Google Drive to display only the plain text information of Google Docs directly on Even G2. (Assumes Google account login.)
@@ -74,7 +78,6 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 11. You will automatically return to the app screen in a logged-in state. Next time you launch the app, steps 2-10 are no longer necessary.
 12. When you click the “Read on Device” button, a list of documents will appear on the device.
 
-**Note:** The screen may go blank and display nothing following a PWA app update or similar action. If this happens, please clear your browser cache and try accessing the page again.
 
 ### 3.5 Operations in Even App (Smartphone)
 1. Install this app via EvenHub.
@@ -94,6 +97,7 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 - **Log-in Info**: Displays the logged-in user icon and name. Use the "LOGOUT" button to sign out.
 - **"Read on Device" Button**: Transitions to either the "Documents List" or "Content View" (most recent state).
 - **"Sync Glasses" Button (Even App only)**: Displays the "Documents List" on the glasses.
+- **"Demo HUD" Button (Even App only)**: Displays an error list or dummy data on the glasses to test HUD modes without full setup.
 - **"Close Glasses App" Button (Even App only)**: Exits the app on the glasses HUD.
 
 ### 4.1.2 App Settings Screen
@@ -102,7 +106,7 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 - **Google Drive Folder ID**: Input field for the folder ID containing your Google Docs.
 - **My Refresh Token (Copy from here)**: Copies the refresh token to enable login in restricted environments (like the Even app browser).
 - **Paste Token from another device**: Paste a refresh token here to log in without direct authentication.
-- **Clear Document Cache**: Clears the locally cached document data. Use this if updates on Google Drive do not reflect in the app. Note: This may reset the reading position of updated documents.
+- **Clear Document Cache**: Clears the locally cached document data. Use this if updates on Google Drive do not reflect in the app. Also allows you to toggle document caching on/off. **Note:** In "No Cache Mode", your reading position is neither saved nor restored (always starts from the beginning). Also, since the doc is fetched from Google Drive every time it is displayed, it may take longer to load. Additionally, the file list will always fetch the latest status from Google Drive.
 - **Color Theme**: Sets the color theme for PC/Smartphone screens.
 - **Auto Scroll Speed**: Sets the interval for automatic scrolling in the "Content View".
 - **Enable Auto Mode**: Specify whether to enable Auto Mode. (Enabling Auto Mode will increase battery consumption.)
@@ -117,11 +121,11 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
   - **Screen-Off Mode**: Hides the entire screen (*2).
 
 ### 4.1.4 Documents List (Glasses HUD Display)
-- (*1) In these modes, the top line shows: "Current Time, Manual(M)/Auto(A)/Manual Locked(M:lck) Mode, Glasses Battery Level".
+- (*1) In these modes, the top line shows: "Current Time, Status (M/A/M:lck), Cache Status (C:On / NC:Off), Glasses Battery Level".
 - **One-Line Mode actions**:
   - **Single Tap**: Refreshes the display (Time, Battery). (Auto-updates periodically in Auto mode; only on interaction in Manual mode).
   - **Scroll Up/Down**: Toggles between Manual and Auto mode (only if "Allow Auto Mode" is enabled on the smartphone). If "M:lck" is displayed, the mode is locked to Manual.
-- (*2) Screen-Off mode allows for a seamless reading experience by keeping the app running in the background.
+- (*2) Screen-Off mode allows for a seamless reading experience by keeping the app running in the background. **Note:** Staying in this mode may increase battery consumption compared to when the app is completely closed.
 
 ### 4.1.5 Content View Screen
 - Scrolls to a point near where you last finished reading.
@@ -194,10 +198,16 @@ cd evenhub
 npm run dev
 ```
 
-Start the simulator in another terminal:
+Glasses test method a: Start the simulator in a separate terminal.
 ```bash
 cd evenhub
 npm run simulator
+```
+
+Glasses test method b: Display the QR code on another terminal (scan it with the EvenHub app on your smartphone)
+```bash
+cd evenhub
+npm run qr
 ```
 
 #### 6.3.3 Build Package for Production
@@ -210,11 +220,19 @@ This generates `DocsReader4EH.ehpk`.
 #### 6.3.4 Deployment
 Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 
+## 7. Version History
+- **2026/04/16**: Initial official release on Evenhub.
+- **2026/04/18**: Added help button, persisted 1-line mode state on glasses, improved error display on glasses launch, added toggle for content cache, added demo mode to experience features without initial setup, persisted auto-update mode ON/OFF state on glasses, and fixed display bugs.
+
 ---
 
 <a name="japanese"></a>
 
 # 日本語
+
+> [!IMPORTANT]
+> **PWAアプリのバージョンアップ時の挙動について**  
+> バージョンアップ直後はアプリの起動に失敗する（画面が真っ白になる、挙動が不安定になるなど）可能性があります。その際は、**再度アプリを起動する**か、**ブラウザのキャッシュをクリアしてから再度アクセス**してください。再起動等を行うことで自動的にバージョンアップが完了します。
 
 ## 1. 本アプリの特色
 - **Google ドライブ連携**: 自身のGoogleドライブの特定フォルダを設定し、フォルダ直下のGoogleドキュメントのプレーンなテキスト情報のみをEven G2に表示します。（Googleアカウントのログインを前提としています。）
@@ -277,7 +295,6 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 11. ログイン状態でアプリ画面に自動的に戻ります。次回以降の起動時は 2～10 の操作は不要です。
 12. 「Read on Device」ボタンを押下すると、デバイス上でドキュメントリストが表示されます。
 
-**注意：**PWAアプリのバージョンアップ等で画面が真っ白で何も表示されなくなることがあります。その際は、ブラウザのキャッシュをクリアしてから再度アクセスしてください。
 
 ### 3.5 Evenアプリでの操作
 1. EvenHubで本アプリをインストールします。
@@ -297,6 +314,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **ログインユーザ表示欄**: ログイン中のアイコンとユーザ名を表示。「LOGOUT」ボタンからログアウトも可能です。
 - **「Read on Device」ボタン**: 「Documents List」画面、もしくは「本文表示」画面（直近の状態）を表示します。
 - **「Sync Glasses」ボタン (Evenアプリのみ)**: グラスに「Documents List」画面を表示します。
+- **「Demo HUD」ボタン (Evenアプリのみ)**: 設定が未完了でもグラス側の表示や操作を体験できるモードで起動します。
 - **「Close Glasses App」ボタン (Evenアプリのみ)**: グラス側のアプリを終了します。
 
 ### 4.1.2 「App Settings」画面
@@ -305,7 +323,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **Google Drive Folder ID**: 表示したいドキュメントが格納されているフォルダのID入力欄。
 - **My Refresh Token (Copy from here)**: 自動ログインできない環境（Evenアプリ内ブラウザ等）に認証情報を渡すための、リフレッシュコピー用。
 - **Paste Token from another device**: 別のデバイスで取得したリフレッシュトークンを入力する欄。
-- **Clear Document Cache**: ローカルに保存されたドキュメントのキャッシュをクリアします。Googleドライブ側の更新状態が反映されない場合に利用してください。※更新されたドキュメントは既読位置がずれる可能性があります。
+- **Clear Document Cache**: ローカルに保存されたドキュメントのキャッシュをクリアします。Googleドライブ側の更新状態が反映されない場合に利用してください。また、ドキュメントキャッシュの有効/無効を切り替えることも可能です。 **※注意:** 「No Cache Mode」（無効状態）では、既読位置の保存および復元は行われません（常に最初から開始されます）。また、本文を表示するたびにGoogleドライブにアクセスするため、表示に時間がかかる場合があります。ファイル一覧画面に遷移した際にも、常に最新のGoogleドライブの状況を取得します。
 - **Color Theme**: PC/スマホ側のカラーテーマ。
 - **Auto Scroll Speed**: 本文表示時の自動スクロール間隔を指定。
 - **Enable Auto Mode**: Auto Mode を許可するかどうかを指定。（Auto Mode を許可すると、バッテリー消費量が増加します）
@@ -320,11 +338,11 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
   - **消灯モード**: 画面全体を非表示にする (*2)
 
 ### 4.1.4 「Documents List」画面のグラス表示
-- (*1) では1行目に「現在日時、手動(M)/自動(A)/手動固定(M:lck)モード、グラスバッテリー残量」が表示されます。
+- (*1) では1行目に「現在日時、モード(M/A/M:lck)、キャッシュ状態(C:ON / NC:OFF)、グラスバッテリー残量」が表示されます。
 - **1行モードでのアクション**:
   - **シングルタップ**: 画面更新（日時・バッテリー）。自動モードでは定期更新されます。
   - **上下スクロール**: 手動(M)と自動(A)モードの切替（スマホ側で Auto Mode が許可されている場合のみ）。「M:lck」と表示されている場合は、手動から切り替えることはできません。
-- (*2) 消灯モードにより、アプリを常時起動したままシームレスに読書へ復帰できます。
+- (*2) 消灯モードにより、アプリを常時起動したままシームレスに読書へ復帰できます。 **※注意:** アプリが起動し続けるため、完全に終了している状態と比較するとバッテリー消費量が増加する可能性があります。
 
 ### 4.1.5 「本文表示」画面
 - 最後に読み終えた箇所付近までスクロールします。
@@ -343,14 +361,10 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - デバイス間で既読状況を共有するため、ユーザー自身のGoogleドライブのマイドライブ直下に `DocsReader4EH.datetime.txt` および `DocsReader4EH.data.json` が作成・更新されます。これらのファイルの存在を許容してください。変更・削除は自己責任となります。
 - GCPのクライアントIDやクライアントシークレットは、漏洩しないようユーザ自身で厳重に管理してください。
 
-
-
 ## 6. 開発者向け情報
 
 ### 6.1 アプリ構成
 `evenhub` フォルダの内容はCloudflareへのリダイレクトを主な役割としています。アプリ本体のロジックは `cloudflare` フォルダに集約されています。
-
-
 
 ### 6.2 side: Cloudflare
 
@@ -409,10 +423,16 @@ cd evenhub
 npm run dev
 ```
 
-以下別のターミナルでシミュレータを起動
+グラステスト方法a:以下別のターミナルでシミュレータを起動
 ```bash
 cd evenhub
 npm run simulator
+```
+
+グラステスト方法b:以下別のターミナルでQRコード表示(スマホのEvenHubアプリで読み取る)
+```bash
+cd evenhub
+npm run qr
 ```
 
 #### 6.3.3 本番パッケージビルド
@@ -425,9 +445,14 @@ npm run pack
 #### 6.3.4 デプロイ
 `.ehpk` ファイルを [EvenHub Portal](https://hub.evenrealities.com) にアップロードします。
 
+## 7. バージョン履歴
+- **2026/04/16**: Evenhubへの正式リリース。
+- **2026/04/18**: ヘルプボタンの追加、グラス側1行モードの状態維持対応、グラス側起動時のエラー時表示の改善、本文キャッシュのON/OFF選択機能の追加、初期設定を行わない状態でも一部機能を体験できるデモ機能の追加、グラス側における自動更新モードのON/OFF状態の維持、表示不具合の修正。
+
 ---
 
 ## License
 MIT License
 
 Developed by **sYamcs**
+
