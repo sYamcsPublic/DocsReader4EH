@@ -73,8 +73,9 @@ export abstract class BasePage {
       return 1.1;
     }
 
-    // 3. Wide half-width capitals (A-Z)
-    if (/[A-Z]/.test(char)) {
+    // 3. Wide half-width capitals (A-Z,%)
+    // if (/[A-Z]/.test(char)) {
+    if (/[A-Z%]/.test(char)) {
       return 1.2;
     }
 
