@@ -76,7 +76,7 @@ export abstract class BasePage {
     // 3. Wide half-width capitals (A-Z,%)
     // if (/[A-Z]/.test(char)) {
     if (/[A-Z%]/.test(char)) {
-      return 1.2;
+      return 1.3;
     }
 
     // 4. Narrow characters (i, l, I, and punctuation)
@@ -85,7 +85,8 @@ export abstract class BasePage {
     }
 
     // 5. Extra-wide symbols (rendered nearly full-width on hardware)
-    if (char === '@') {
+    // if (char === '@') {
+    if (/[@#&]/.test(char)) {
       return 2.0;
     }
 

@@ -140,7 +140,8 @@ export class ReaderPage extends BasePage {
 
   private paginate(text: string): string[] {
     // Normalize text: 2+ empty lines -> 1 empty line
-    const normalizedText = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n");
+    const MONO_SPACE = '\u3000';
+    const normalizedText = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/　/g, MONO_SPACE);
     const rawLines = normalizedText.split("\n");
 
     // Convert to visual lines using width-based wrapping

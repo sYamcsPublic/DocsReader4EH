@@ -438,7 +438,8 @@ function App() {
 
     const rawText = await driveService.getDocContent(file.id);
     if (rawText.startsWith("Export Error") || rawText.startsWith("Network Error") || rawText.startsWith("AUTH_EXPIRED")) return rawText; // Don't cache errors
-    const text = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+    const MONO_SPACE = '\u3000';
+    const text = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/　/g, MONO_SPACE);
 
     if (isCacheEnabled) {
       const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
@@ -570,7 +571,8 @@ function App() {
           setStatus(`Fetching from Drive: ${file.name}...`);
           const rawText = await driveService.getDocContent(file.id);
           if (rawText.startsWith("Export Error") || rawText.startsWith("Network Error") || rawText.startsWith("AUTH_EXPIRED")) return rawText; // Don't cache errors
-          const text = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+          const MONO_SPACE = '\u3000';
+          const text = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/　/g, MONO_SPACE);
 
           if (isCacheEnabled) {
             const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
