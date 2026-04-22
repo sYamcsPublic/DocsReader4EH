@@ -137,7 +137,11 @@ function fetchWeather() {
   &daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,snowfall_sum,windspeed_10m_max,weathercode
   &timezone=Asia%2FTokyo`.replace(/\n|\s/g, '');
 
-  const res = UrlFetchApp.fetch(url);
+  const res = UrlFetchApp.fetch(url, {
+    headers: {
+      "User-Agent": "my-weather-app/1.0"
+    }
+  });
   const json = JSON.parse(res.getContentText());
 
 // const mockJson = {
