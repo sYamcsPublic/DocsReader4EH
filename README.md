@@ -14,13 +14,17 @@ Even Realities G2 グラスで Google ドキュメントを閲覧するための
 # English
 
 > [!IMPORTANT]
-> **Behavior after PWA app version update**  
-> Immediately after a version update, the app may fail to start (e.g., the screen turns white or behaves unstably). If this occurs, please **restart the app** or **clear your browser cache and access it again**. The update will complete automatically upon restarting.
+> **Behavior During PWA App Updates**  
+> Immediately after an update, the app may fail to launch (e.g., the screen may go blank or the app may behave erratically). If this happens, please **relaunch the app**. The update will complete automatically when you restart the app.
 
 ## 1. Features
 - **Google Drive Integration**: Set a specific folder in your Google Drive to display only the plain text information of Google Docs directly on Even G2. (Assumes Google account login.)
 - **Persistent Settings**: Google account login and various settings are persisted once configured.
 - **Versatile Use Cases**: Usage depends on the user's imagination.
+  - **Example 1: Long-form reading (Papers, Novels, etc.)**  
+    By keeping the **"Content Cache" enabled**, you can store long texts that rarely change in Google Drive and enjoy reading them across your glasses, smartphone, and PC. This is the primary recommended use case.
+  - **Example 2: Automatic updates of short text or personal notes (used as a simple dashboard that can be easily customized)**  
+    With the update on April 18, 2026, you can now set the option to “**Disable Cache**,” making it possible to use GAS or similar tools to automatically update information periodically, or to view your personal notes in Glass in real time. As an example of how to use GAS, sample code is available at [./gas/code.gs](./gas/code.gs). Please make good use of it.
 - **Auto-scroll / Auto-update**: Includes automatic scrolling and update functions (with some limitations).
 - **Multilingual Character Support**: Supports both Japanese and English text using full-width characters (kanji, hiragana, katakana), half-width alphanumerics, and half-width special characters.
 
@@ -106,7 +110,13 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 - **Google Drive Folder ID**: Input field for the folder ID containing your Google Docs.
 - **My Refresh Token (Copy from here)**: Copies the refresh token to enable login in restricted environments (like the Even app browser).
 - **Paste Token from another device**: Paste a refresh token here to log in without direct authentication.
-- **Clear Document Cache**: Clears the locally cached document data. Use this if updates on Google Drive do not reflect in the app. Also allows you to toggle document caching on/off. **Note:** In "No Cache Mode", your reading position is neither saved nor restored (always starts from the beginning). Also, since the doc is fetched from Google Drive every time it is displayed, it may take longer to load. Additionally, the file list will always fetch the latest status from Google Drive.
+- **Clear Document Cache**: Clears the locally stored document cache. Use this if updates from Google Drive are not being reflected. You can also enable or disable the document cache.
+  > [!IMPORTANT] **Important Notes Regarding “No Cache Mode”**
+  > - Your reading position will not be saved or restored (you will always start from the beginning).
+  > - The app always fetches the latest data from Google Drive when you navigate to the file list screen.
+  > - Since the app accesses Google Drive every time you view a document, loading may take some time.
+  > - Due to frequent access to Google Drive, data retrieval may occasionally fail. If this happens, double-tap to return to the previous screen and try accessing it again.
+  > - Google login may become unstable due to token refresh. If this happens, please close and restart the app on Glass, or relaunch this app from the Even app on your smartphone.
 - **Color Theme**: Sets the color theme for PC/Smartphone screens.
 - **Auto Scroll Speed**: Sets the interval for automatic scrolling in the "Content View".
 - **Enable Auto Mode**: Specify whether to enable Auto Mode. (Enabling Auto Mode will increase battery consumption.)
@@ -224,6 +234,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **2026/04/16**: Initial official release on Evenhub.
 - **2026/04/18**: Added help button, persisted 1-line mode state on glasses, improved error display on glasses launch, added toggle for content cache, added demo mode to experience features without initial setup, persisted auto-update mode ON/OFF state on glasses, and fixed display bugs.
 - **2026/04/19**: Corrected the readme file and revised some character widths.
+- **2026/04/23**: Readme update (introduction of use cases), placement of GAS code for use cases.
 
 ---
 
@@ -233,12 +244,16 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 
 > [!IMPORTANT]
 > **PWAアプリのバージョンアップ時の挙動について**  
-> バージョンアップ直後はアプリの起動に失敗する（画面が真っ白になる、挙動が不安定になるなど）可能性があります。その際は、**再度アプリを起動する**か、**ブラウザのキャッシュをクリアしてから再度アクセス**してください。再起動等を行うことで自動的にバージョンアップが完了します。
+> バージョンアップ直後はアプリの起動に失敗する可能性があります（画面が真っ白になる、挙動が不安定になるなど）。その際は、**再度アプリを起動**してください。再起動等を行うことで自動的にバージョンアップが完了します。
 
 ## 1. 本アプリの特色
 - **Google ドライブ連携**: 自身のGoogleドライブの特定フォルダを設定し、フォルダ直下のGoogleドキュメントのプレーンなテキスト情報のみをEven G2に表示します。（Googleアカウントのログインを前提としています。）
 - **設定の永続化**: Googleアカウントのログインや各種設定は一度設定すれば永続化されます。
 - **多種多様な使い方**: ユーザのアイデア次第で使い方は多種多様です。
+  - **活用例1：長文の読書（論文や小説など）**  
+    「**キャッシュを有効**」にした状態で、更新頻度が低く比較的長文のテキストをGoogleドライブに入れておき、グラス・スマホ・PCを跨いでシームレスに読書を楽しむ。（本アプリの最も想定している利用シーンです）
+  - **活用例2：短文の自動更新や自分専用メモ（容易なカスタマイズが可能な簡易ダッシュボードとして利用）**  
+    2026/04/18のアップデートで「**キャッシュを無効**」に設定できるようになったため、GASなどを利用して定期的に自動更新される情報や、自身のメモを逐次グラスで確認するといった使い方も可能です。GASの活用例として [./gas/code.gs](./gas/code.gs) にサンプルコードを配置しています。ぜひ有効活用してください。
 - **自動機能**: 一定の制限はありますが、自動スクロール/自動更新機能があります。
 - **多言語文字対応**: 全角文字（漢字・ひらがな・カタカナ等）・半角英数字・半角特殊文字を使用した日本語と英語のテキスト表示に対応しています。
 
@@ -324,7 +339,13 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **Google Drive Folder ID**: 表示したいドキュメントが格納されているフォルダのID入力欄。
 - **My Refresh Token (Copy from here)**: 自動ログインできない環境（Evenアプリ内ブラウザ等）に認証情報を渡すための、リフレッシュコピー用。
 - **Paste Token from another device**: 別のデバイスで取得したリフレッシュトークンを入力する欄。
-- **Clear Document Cache**: ローカルに保存されたドキュメントのキャッシュをクリアします。Googleドライブ側の更新状態が反映されない場合に利用してください。また、ドキュメントキャッシュの有効/無効を切り替えることも可能です。 **※注意:** 「No Cache Mode」（無効状態）では、既読位置の保存および復元は行われません（常に最初から開始されます）。また、本文を表示するたびにGoogleドライブにアクセスするため、表示に時間がかかる場合があります。ファイル一覧画面に遷移した際にも、常に最新のGoogleドライブの状況を取得します。
+- **Clear Document Cache**: ローカルに保存されたドキュメントのキャッシュをクリアします。Googleドライブ側の更新状態が反映されない場合に利用してください。また、ドキュメントキャッシュの有効/無効を切り替えることも可能です。
+  > [!IMPORTANT] **「No Cache Mode」（キャッシュ無効状態）における注意点**
+  > - 既読位置の保存および復元は行われません（常に最初から開始されます）。
+  > - ファイル一覧画面に遷移した際にも、常に最新のGoogleドライブの状況を取得します。
+  > - 本文を表示するたびにGoogleドライブにアクセスするため、表示に時間がかかる場合があります。
+  > - Googleドライブへのアクセスを頻繁に行うため、データ取得に失敗することがあります。その際は、ダブルタップで前画面に戻って再度アクセスし直してください。
+  > - トークンリフレッシュの影響でGoogleログインが不安定になることがあります。その際は、グラス上で一度アプリを終了して再起動するか、スマホのEvenアプリから本アプリを再度起動し直してください。
 - **Color Theme**: PC/スマホ側のカラーテーマ。
 - **Auto Scroll Speed**: 本文表示時の自動スクロール間隔を指定。
 - **Enable Auto Mode**: Auto Mode を許可するかどうかを指定。（Auto Mode を許可すると、バッテリー消費量が増加します）
@@ -450,6 +471,7 @@ npm run pack
 - **2026/04/16**: Evenhubへの正式リリース。
 - **2026/04/18**: ヘルプボタンの追加、グラス側1行モードの状態維持対応、グラス側起動時のエラー時表示の改善、本文キャッシュのON/OFF選択機能の追加、初期設定を行わない状態でも一部機能を体験できるデモ機能の追加、グラス側における自動更新モードのON/OFF状態の維持、表示不具合の修正。
 - **2026/04/19**: readme是正、一部文字幅見直し。
+- **2026/04/23**: readmeの更新（活用例の紹介）、活用例のGASコード配置。
 
 ---
 
