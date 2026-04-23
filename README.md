@@ -24,7 +24,7 @@ Even Realities G2 グラスで Google ドキュメントを閲覧するための
   - **Example 1: Long-form reading (Papers, Novels, etc.)**  
     By keeping the **"Content Cache" enabled**, you can store long texts that rarely change in Google Drive and enjoy reading them across your glasses, smartphone, and PC. This is the primary recommended use case.
   - **Example 2: Automatic updates of short text or personal notes (used as a simple dashboard that can be easily customized)**  
-    With the update on April 18, 2026, you can now set the option to “**Disable Cache**,” making it possible to use GAS or similar tools to automatically update information periodically, or to view your personal notes in Glass in real time. As an example of how to use GAS, sample code is available at `./gas/code.gs`. Please make good use of it.
+    With the update on April 18, 2026, you can now set the option to “**Disable Cache**,” making it possible to use GAS or similar tools to automatically update information periodically, or to view your personal notes in Glass in real time. As an example of how to use GAS, sample code is available at `https://github.com/sYamcsPublic/DocsReader4EH/blob/main/gas/code.gs`. Please make good use of it.
 - **Auto-scroll / Auto-update**: Includes automatic scrolling and update functions (with some limitations).
 - **Multilingual Character Support**: Supports both Japanese and English text using full-width characters (kanji, hiragana, katakana), half-width alphanumerics, and half-width special characters.
 
@@ -253,7 +253,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
   - **活用例1：長文の読書（論文や小説など）**  
     「**キャッシュを有効**」にした状態で、更新頻度が低く比較的長文のテキストをGoogleドライブに入れておき、グラス・スマホ・PCを跨いでシームレスに読書を楽しむ。（本アプリの最も想定している利用シーンです）
   - **活用例2：短文の自動更新や自分専用メモ（カスタマイズが容易な簡易ダッシュボードとして利用）**  
-    2026/04/18のアップデートで「**キャッシュを無効**」に設定できるようになったため、GASなどを利用して定期的に自動更新される情報や、自身のメモを逐次グラスで確認するといった使い方も可能です。GASの活用例として `./gas/code.gs` にサンプルコードを配置しています。ぜひ有効活用してください。
+    2026/04/18のアップデートで「**キャッシュを無効**」に設定できるようになったため、GASなどを利用して定期的に自動更新される情報や、自身のメモを逐次グラスで確認するといった使い方も可能です。GASの活用例として `https://github.com/sYamcsPublic/DocsReader4EH/blob/main/gas/code.gs` にサンプルコードを配置しています。ぜひ有効活用してください。
 - **自動機能**: 一定の制限はありますが、自動スクロール/自動更新機能があります。
 - **多言語文字対応**: 全角文字（漢字・ひらがな・カタカナ等）・半角英数字・半角特殊文字を使用した日本語と英語のテキスト表示に対応しています。
 

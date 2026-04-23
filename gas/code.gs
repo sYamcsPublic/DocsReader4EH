@@ -403,8 +403,8 @@ function fetchGeminiResponse(apiKey, prompt) {
         throw new Error(`最大リトライ回数を超過しました: ${e.message}`);
       }
       retryCount++;
-      Utilities.sleep(waitTime);
-      waitTime *= 2;
+      Utilities.sleep(waitTimeSec);
+      waitTimeSec *= 2;
     }
   }
 }
