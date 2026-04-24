@@ -71,7 +71,7 @@ function fetchWeather() {
       const minTemp = f.temperature.min.celsius || '-';
       const maxTemp = f.temperature.max.celsius || '-';
       
-      content += `【${f.dateLabel}の天気 ${formatWeatherDate(f.date, true)} ${f.telop} ${maxTemp}℃/${minTemp}℃】\n`;
+      content += `【${formatWeatherDate(f.date, true)} ${f.dateLabel}の天気 ${f.telop} ${maxTemp}℃/${minTemp}℃】\n`;
       content += `詳細：${f.detail.weather || '---'}\n`;
       content += `風向き：${f.detail.wind || '---'}\n`;
       content += `波の高さ：${f.detail.wave || '---'}\n`;
