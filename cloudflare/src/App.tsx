@@ -1415,7 +1415,8 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
             <h2 className="text-base font-bold truncate text-zinc-900 dark:text-zinc-100 flex items-baseline gap-2">
               {files[currentIdx]?.name}
               <span className="text-xs font-normal text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                {currentRatio !== undefined && isCacheEnabled ? `[${(currentRatio * 100).toFixed(1)}%]` : ''}
+                {/* {currentRatio !== undefined && isCacheEnabled ? `[${(currentRatio * 100).toFixed(1)}%]` : ''} */}
+                {currentRatio !== undefined ? `[${(currentRatio * 100).toFixed(1)}%]` : ''}
               </span>
             </h2>
             {isAuto && (
