@@ -1,48 +1,35 @@
 /**
  * 定期実行トリガーをセットアップする関数
- * Function to set up a scheduled trigger
- * 
- * 実行タイミングに左右されず、指定した「時刻・分」に基づいて設定。
- * Configured based on specified “hours and minutes,” regardless of the execution timing.
- *
- * <トリガー設定前の準備 / Preparation before setting up the trigger>
- * トリガーセットアップ前に出力先のGoogleドキュメントを作成して、ドキュメントIDをスクリプトプロパティに設定が必要。
- * Before setting up the trigger, you must create the destination Google Doc and set its document ID in the script properties.
- * - DOC_ID_1: 天気 / Weather
- * - DOC_ID_2: 国内ニュース / Domestic News
- * - DOC_ID_3: 国際ニュース / World News
- * - DOC_ID_4: ITニュース / IT News
- * - DOC_ID_5: 科学ニュース / Science News
+ * * <トリガー設定前の準備>
+ * スクリプトプロパティに以下のIDを設定してください。
+ * - DOC_ID_1: 天気
+ * - DOC_ID_2: 最新ニュース (全カテゴリ統合・新着30件)
+ * - DOC_ID_3: 国内ニュース
+ * - DOC_ID_4: 国際ニュース
+ * - DOC_ID_5: ITニュース
+ * - DOC_ID_6: 科学ニュース
  */
 function setupTriggers() {
   const triggers = ScriptApp.getProjectTriggers();
   triggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
 
-  // --- 1. 天気予報：0:05, 6:05, 12:05, 18:05 頃に固定 ---
+  // --- 1. 天気予報：0:05, 6:05, 12:05, 18:05 頃 ---
   [0, 6, 12, 18].forEach(hour => {
     ScriptApp.newTrigger('fetchWeather')
       .timeBased()
       .atHour(hour)
-      .nearMinute(5) // 5分頃を指定
-      .everyDays(1)  // 毎日、この時間に実行
+      .nearMinute(5)
+      .everyDays(1)
       .create();
   });
 
-  // --- 2. ニュース：毎時 00分 頃に固定 ---
-  const newsFunctions = [
-    'fetchDomesticNews',
-    'fetchWorldNews',
-    'fetchItNews',
-    'fetchScienceNews'
-  ];
-  
-  newsFunctions.forEach(funcName => {
-    ScriptApp.newTrigger(funcName)
-      .timeBased()
-      .everyHours(1)
-      .nearMinute(0) // ここで0分近辺を指定
-      .create();
-  });
+  // --- 2. ニュース：毎時 00分 頃 ---
+  // すべてのニュースを一括取得・更新する関数を登録
+  ScriptApp.newTrigger('fetchAllNews')
+    .timeBased()
+    .everyHours(1)
+    .nearMinute(0)
+    .create();
   
   console.log('すべてのトリガーを再設定しました。');
 }
@@ -53,6 +40,9 @@ function setupTriggers() {
  * ---------------------------------------------------------
  */
 
+/**
+ * 天気予報の取得
+ */
 function fetchWeather() {
   console.log(`天気：開始`);
   const docId = PropertiesService.getScriptProperties().getProperty('DOC_ID_1');
@@ -88,28 +78,45 @@ function fetchWeather() {
   }
 }
 
-function fetchDomesticNews() {
-  console.log(`国内ニュース：開始`);
-  processNewsRSS('DOC_ID_2', 'https://news.yahoo.co.jp/rss/categories/domestic.xml');
-  console.log(`国内ニュース：完了`);
-}
+/**
+ * 全ニュースの取得・統合・個別更新
+ */
+function fetchAllNews() {
+  console.log(`全ニュース取得処理：開始`);
+  
+  const newsSources = [
+    { propKey: 'DOC_ID_3', url: 'https://news.yahoo.co.jp/rss/categories/domestic.xml', label: '国内' },
+    { propKey: 'DOC_ID_4', url: 'https://news.yahoo.co.jp/rss/categories/world.xml', label: '国際' },
+    { propKey: 'DOC_ID_5', url: 'https://news.yahoo.co.jp/rss/categories/it.xml', label: 'IT' },
+    { propKey: 'DOC_ID_6', url: 'https://news.yahoo.co.jp/rss/categories/science.xml', label: '科学' }
+  ];
 
-function fetchWorldNews() {
-  console.log(`国際ニュース：開始`);
-  processNewsRSS('DOC_ID_3', 'https://news.yahoo.co.jp/rss/categories/world.xml');
-  console.log(`国際ニュース：完了`);
-}
+  let allNewsList = [];
 
-function fetchItNews() {
-  console.log(`ITニュース：開始`);
-  processNewsRSS('DOC_ID_4', 'https://news.yahoo.co.jp/rss/categories/it.xml');
-  console.log(`ITニュース：完了`);
-}
+  // 1. 各カテゴリの取得と個別ドキュメント更新
+  newsSources.forEach(source => {
+    const list = getNewsListFromRSS(source.url);
+    if (list.length > 0) {
+      // 個別カテゴリのドキュメントを更新
+      const content = createNewsContent(list);
+      updateDoc(PropertiesService.getScriptProperties().getProperty(source.propKey), content);
+      
+      // 統合リストに追加
+      allNewsList = allNewsList.concat(list);
+    }
+  });
 
-function fetchScienceNews() {
-  console.log(`科学ニュース：開始`);
-  processNewsRSS('DOC_ID_5', 'https://news.yahoo.co.jp/rss/categories/science.xml');
-  console.log(`科学ニュース：完了`);
+  // 2. 全ニュースをpubDateで降順（新しい順）にソート
+  allNewsList.sort((a, b) => b.pubDate - a.pubDate);
+
+  // 3. 最新ニュース（最大30件）を出力
+  const latestNewsDocId = PropertiesService.getScriptProperties().getProperty('DOC_ID_2');
+  const top30News = allNewsList.slice(0, 30);
+  const latestContent = createNewsContent(top30News);
+  
+  updateDoc(latestNewsDocId, latestContent);
+
+  console.log(`全ニュース取得処理：完了`);
 }
 
 /**
@@ -119,17 +126,15 @@ function fetchScienceNews() {
  */
 
 /**
- * ニュースRSSの取得・整形・出力
+ * RSSからニュースリスト（配列）を取得する
  */
-function processNewsRSS(propKey, url) {
-  const docId = PropertiesService.getScriptProperties().getProperty(propKey);
-  
+function getNewsListFromRSS(url) {
   try {
     const response = UrlFetchApp.fetch(url);
     const xml = XmlService.parse(response.getContentText());
     const items = xml.getRootElement().getChild('channel').getChildren('item');
     
-    let newsList = items.map(item => {
+    return items.map(item => {
       return {
         title: item.getChildText('title'),
         link: item.getChildText('link'),
@@ -137,33 +142,43 @@ function processNewsRSS(propKey, url) {
         pubDate: new Date(item.getChildText('pubDate'))
       };
     });
-
-    // pubDateで降順（新しい順）にソート
-    newsList.sort((a, b) => b.pubDate - a.pubDate);
-
-    let content = `更新日時：${getFormattedDate(new Date())}\n\n`;
-    
-    newsList.forEach(news => {
-      content += `【${getFormattedDate(news.pubDate)}】\n`;
-      content += `${news.title}\n`;
-      content += `${news.description}\n\n`;
-    });
-
-    updateDoc(docId, content);
   } catch (e) {
-    console.error(`RSS取得エラー (${propKey}): ` + e.toString());
+    console.error(`RSS取得エラー (${url}): ` + e.toString());
+    return [];
   }
+}
+
+/**
+ * ニュースリストをドキュメント用のテキスト形式に変換
+ */
+function createNewsContent(newsList) {
+  let content = `更新日時：${getFormattedDate(new Date())}\n`;
+  content += "\n";
+  
+  newsList.forEach(news => {
+    content += `【${getFormattedDate(news.pubDate)}】\n`;
+    content += `${news.title}\n`;
+    content += `${news.description}\n\n`;
+  });
+  return content;
 }
 
 /**
  * Googleドキュメントの内容を上書き更新
  */
 function updateDoc(docId, content) {
-  if (!docId) return;
-  const doc = DocumentApp.openById(docId);
-  const body = doc.getBody();
-  body.clear();
-  body.setText(content);
+  if (!docId) {
+    console.warn("Doc IDが設定されていません。");
+    return;
+  }
+  try {
+    const doc = DocumentApp.openById(docId);
+    const body = doc.getBody();
+    body.clear();
+    body.setText(content);
+  } catch (e) {
+    console.error(`ドキュメント更新エラー (ID: ${docId}): ` + e.toString());
+  }
 }
 
 /**
@@ -184,7 +199,6 @@ function getFormattedDate(date) {
 
 /**
  * 天気API用の日時整形
- * ISO 8601等から「2026/4/25(Sat)4:38:00」形式へ
  */
 function formatWeatherDate(dateStr, dateOnly = false) {
   if (!dateStr) return '---';
