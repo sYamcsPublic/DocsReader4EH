@@ -235,7 +235,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **2026/04/18**: Added help button, persisted 1-line mode state on glasses, improved error display on glasses launch, added toggle for content cache, added demo mode to experience features without initial setup, persisted auto-update mode ON/OFF state on glasses, and fixed display bugs.
 - **2026/04/19**: Corrected the readme file and revised some character widths.
 - **2026/04/23**: Readme update (introduction of use cases), placement of GAS code for use cases.
-- **2026/04/25**: Major revision of the GAS code in the usage examples; display of the PWA content rendering ratio when “Content Cache OFF” is selected.
+- **2026/04/25**: Major revision of the GAS code in the usage examples, Display the read percentage even when “Cache Off” is selected on the PWA app's content view screen.
 
 ---
 
@@ -473,7 +473,7 @@ npm run pack
 - **2026/04/18**: ヘルプボタンの追加、グラス側1行モードの状態維持対応、グラス側起動時のエラー時表示の改善、本文キャッシュのON/OFF選択機能の追加、初期設定を行わない状態でも一部機能を体験できるデモ機能の追加、グラス側における自動更新モードのON/OFF状態の維持、表示不具合の修正。
 - **2026/04/19**: readme是正、一部文字幅見直し。
 - **2026/04/23**: readmeの更新（活用例の紹介）、活用例のGASコード配置。
-- **2026/04/25**: 活用例のGASコード大幅見直し、本文キャッシュOFF選択時のPWA本文表示割合表示。
+- **2026/04/25**: 活用例のGASコード大幅見直し、PWAアプリ本文表示画面において本文キャッシュOFF選択時も既読割合を表示。
 
 ---
 
