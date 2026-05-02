@@ -99,8 +99,8 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 - **Refresh Icon (Top Right)**: Syncs read progress across devices using your Google Drive (Uploads/Downloads the latest state).
 - **Status Bar (Top Left)**: Displays app status.
 - **Log-in Info**: Displays the logged-in user icon and name. Use the "LOGOUT" button to sign out.
-- **"Read on Device" Button**: Transitions to either the "Documents List" or "Content View" (most recent state).
-- **"Sync Glasses" Button (Even App only)**: Displays the "Documents List" on the glasses.
+- **"Read on Device" Button**: Transitions to either the "Document List" or "Content View" (most recent state).
+- **"Sync Glasses" Button (Even App only)**: Displays the "Document List" on the glasses.
 - **"Demo HUD" Button (Even App only)**: Displays an error list or dummy data on the glasses to test HUD modes without full setup.
 - **"Close Glasses App" Button (Even App only)**: Exits the app on the glasses HUD.
 
@@ -110,18 +110,22 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 - **Google Drive Folder ID**: Input field for the folder ID containing your Google Docs.
 - **My Refresh Token (Copy from here)**: Copies the refresh token to enable login in restricted environments (like the Even app browser).
 - **Paste Token from another device**: Paste a refresh token here to log in without direct authentication.
-- **Clear Document Cache**: Clears the locally stored document cache. Use this if updates from Google Drive are not being reflected. You can also enable or disable the document cache.
+- **Cache Mode**: 
+  - **Clear Cache**: Clears the locally stored document cache. Use this if updates from Google Drive are not being reflected. 
+  - **Cache Documents (Toggle)**: Enable or disable the document cache.
   > [!IMPORTANT] **Important Notes Regarding “No Cache Mode”**
   > - Your reading position will not be saved or restored (you will always start from the beginning).
   > - The app always fetches the latest data from Google Drive when you navigate to the file list screen.
   > - Since the app accesses Google Drive every time you view a document, loading may take some time.
   > - Due to frequent access to Google Drive, data retrieval may occasionally fail. If this happens, double-tap to return to the previous screen and try accessing it again.
   > - Google login may become unstable due to token refresh. If this happens, please close and restart the app on Glass, or relaunch this app from the Even app on your smartphone.
-- **Color Theme**: Sets the color theme for PC/Smartphone screens.
-- **Auto Scroll Speed**: Sets the interval for automatic scrolling in the "Content View".
+- **Verbatim Mode**: 
+  - Uses the Google Docs API to retrieve content without abbreviation. Full-width spaces and line breaks are preserved as-is. Ideal for grid layouts on glasses.
 - **Enable Auto Mode**: Specify whether to enable Auto Mode. (Enabling Auto Mode will increase battery consumption.)
+- **Auto Scroll Speed**: Sets the interval for automatic scrolling in the "Content View".
+- **Color Theme**: Sets the color theme for PC/Smartphone screens.
 
-### 4.3 Documents List Screen
+### 4.3 Document List Screen
 - Displays a list of Google Docs in the specified folder.
 - Shows the read percentage for each document.
 - Tap a document to transition to the "Content View".
@@ -130,7 +134,7 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
   - **One-Line Mode**: Shows only the top line of the screen (*1).
   - **Screen-Off Mode**: Hides the entire screen (*2).
 
-### 4.4 Documents List (Glasses HUD Display)
+### 4.4 Document List (Glasses HUD Display)
 - (*1) In these modes, the top line shows: "Current Time, Status (M/A/M:lck), Cache Status (C:On / NC:Off), Glasses Battery Level".
 - **One-Line Mode actions**:
   - **Single Tap**: Refreshes the display (Time, Battery). (Auto-updates periodically in Auto mode; only on interaction in Manual mode).
@@ -144,7 +148,8 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 - **"PREVIOUS" / "NEXT" Buttons (PWA only)**: Navigates between files. "PREVIOUS" scrolls to the bottom of the previous file; "NEXT" scrolls to the top of the next file.
 - **Scroll Up (Glasses)**: Move to the previous page.
 - **Scroll Down (Glasses)**: Move to the next page.
-- **Double-Tap (Glasses)**: Return to the "Documents List" screen.
+- **Single Tap (Glasses)**: Toggles the top line between filename info and current date/time.
+- **Double-Tap (Glasses)**: Return to the "Document List" screen.
 
 ## 5. Privacy Policy & Disclaimer
 - This app is highly experimental. Use it at your own risk.
@@ -236,6 +241,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **2026/04/19**: Corrected the readme file and revised some character widths.
 - **2026/04/23**: Readme update (introduction of use cases), placement of GAS code for use cases.
 - **2026/04/25**: Major revision of the GAS code in the usage examples, Display the read percentage even when “Cache Off” is selected on the PWA app's content view screen.
+- **2026/05/02**: Added a feature that allows you to toggle between displaying the filename on the first line and the current date and time with a single tap on the document view screen.  Added support for the Google Docs API (Verbatim mode), enabling the display of full-width characters and layout without any omissions. Added a feature to the GAS sample code that automatically generates a calendar using a monospaced font for full-width characters.
 
 ---
 
@@ -329,8 +335,8 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **右上の更新アイコン**: ユーザ自身のGoogleドライブを利用して既読状況を同期します（最後に保存した状態をアップロードまたはダウンロード）。
 - **左上のアプリ表示欄**: アプリの様々な状況を表示します。
 - **ログインユーザ表示欄**: ログイン中のアイコンとユーザ名を表示。「LOGOUT」ボタンからログアウトも可能です。
-- **「Read on Device」ボタン**: 「Documents List」画面、もしくは「本文表示」画面（直近の状態）を表示します。
-- **「Sync Glasses」ボタン (Evenアプリのみ)**: グラスに「Documents List」画面を表示します。
+- **「Read on Device」ボタン**: 「Document List」画面、もしくは「本文表示」画面（直近の状態）を表示します。
+- **「Sync Glasses」ボタン (Evenアプリのみ)**: グラスに「Document List」画面を表示します。
 - **「Demo HUD」ボタン (Evenアプリのみ)**: 設定が未完了でもグラス側の表示や操作を体験できるモードで起動します。
 - **「Close Glasses App」ボタン (Evenアプリのみ)**: グラス側のアプリを終了します。
 
@@ -340,18 +346,22 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **Google Drive Folder ID**: 表示したいドキュメントが格納されているフォルダのID入力欄。
 - **My Refresh Token (Copy from here)**: 自動ログインできない環境（Evenアプリ内ブラウザ等）に認証情報を渡すための、リフレッシュコピー用。
 - **Paste Token from another device**: 別のデバイスで取得したリフレッシュトークンを入力する欄。
-- **Clear Document Cache**: ローカルに保存されたドキュメントのキャッシュをクリアします。Googleドライブ側の更新状態が反映されない場合に利用してください。また、ドキュメントキャッシュの有効/無効を切り替えることも可能です。
+- **Cache Mode**: 
+  - **Clear Cache**: ローカルに保存されたドキュメントのキャッシュをクリアします。Googleドライブ側の更新状態が反映されない場合に利用してください。
+  - **Cache Documents (Toggle)**: ドキュメントキャッシュの有効/無効を切り替えます。
   > [!IMPORTANT] **「No Cache Mode」（キャッシュ無効状態）における注意点**
   > - 既読位置の保存および復元は行われません（常に最初から開始されます）。
   > - ファイル一覧画面に遷移した際にも、常に最新のGoogleドライブの状況を取得します。
   > - 本文を表示するたびにGoogleドライブにアクセスするため、表示に時間がかかる場合があります。
   > - Googleドライブへのアクセスを頻繁に行うため、データ取得に失敗することがあります。その際は、ダブルタップで前画面に戻って再度アクセスし直してください。
   > - トークンリフレッシュの影響でGoogleログインが不安定になることがあります。その際は、グラス上で一度アプリを終了して再起動するか、スマホのEvenアプリから本アプリを再度起動し直してください。
-- **Color Theme**: PC/スマホ側のカラーテーマ。
-- **Auto Scroll Speed**: 本文表示時の自動スクロール間隔を指定。
+- **Verbatim Mode**: 
+  - Google Docs APIを使用して、全角空白や改行を省略せずにコンテンツを取得します。グラスでのグリッド表示に最適です。
 - **Enable Auto Mode**: Auto Mode を許可するかどうかを指定。（Auto Mode を許可すると、バッテリー消費量が増加します）
+- **Auto Scroll Speed**: 本文表示時の自動スクロール間隔を指定。
+- **Color Theme**: PC/スマホ側のカラーテーマ。
 
-### 4.3 「Documents List」画面
+### 4.3 「Document List」画面
 - 指定フォルダ直下のGoogleドキュメント一覧を表示。
 - 既読割合（%）が表示されます。
 - ドキュメントをタップすると「本文表示」画面へ遷移します。
@@ -360,7 +370,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
   - **1行モード**: 画面上部1行のみを表示 (*1)
   - **消灯モード**: 画面全体を非表示にする (*2)
 
-### 4.4 「Documents List」画面のグラス表示
+### 4.4 「Document List」画面のグラス表示
 - (*1) では1行目に「現在日時、モード(M/A/M:lck)、キャッシュ状態(C:ON / NC:OFF)、グラスバッテリー残量」が表示されます。
 - **1行モードでのアクション**:
   - **シングルタップ**: 画面更新（日時・バッテリー）。自動モードでは定期更新されます。
@@ -374,7 +384,8 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **「PREVIOUS」「NEXT」ボタン (PWAのみ)**: 前後のファイルへ移動。前ファイルは最下部、次ファイルは最上段へ移動します。
 - **上スクロール (グラス)**: 前ページへ遷移。
 - **下スクロール (グラス)**: 次ページへ遷移。
-- **ダブルタップ (グラス)**: 「Documents List」画面へ戻る。
+- **シングルタップ (グラス)**: 1行目のファイル名表示と日時表示を切り替えます。
+- **ダブルタップ (グラス)**: 「Document List」画面へ戻る。
 
 ## 5. プライバシーポリシーと免責事項
 - 本アプリは実験的な側面が強いです。自己責任の下での利用をお願いします。
@@ -474,6 +485,7 @@ npm run pack
 - **2026/04/19**: readme是正、一部文字幅見直し。
 - **2026/04/23**: readmeの更新（活用例の紹介）、活用例のGASコード配置。
 - **2026/04/25**: 活用例のGASコード大幅見直し、PWAアプリ本文表示画面において本文キャッシュOFF選択時も既読割合を表示。
+- **2026/05/02**: 本文表示時にシングルタップすることで表示内容を切り替えられる機能（ファイル名 or 現在日時）を追加。Google Docs API（Verbatimモード）に対応し、全角文字やレイアウトを省略せずに表示可能に。GASサンプルコードに全角文字の等角フォントを活かしたカレンダー自動生成機能を追加。
 
 ---
 

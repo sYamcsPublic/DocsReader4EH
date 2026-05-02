@@ -50,6 +50,7 @@ function App() {
   const [isAutoAllowed, setIsAutoAllowed] = useState(localStorage.getItem('g_auto_allowed') === 'true');
   const [isAutoEnabled, setIsAutoEnabled] = useState(localStorage.getItem('g_auto_enabled') === 'true');
   const [isCacheEnabled, setIsCacheEnabled] = useState(localStorage.getItem('g_cache_enabled') !== 'false');
+  const [isVerbatimMode, setIsVerbatimMode] = useState(localStorage.getItem('g_verbatim_mode') === 'true');
   const [showHelp, setShowHelp] = useState(false);
   const [helpContent, setHelpContent] = useState("");
   const [isHelpLoading, setIsHelpLoading] = useState(false);
@@ -436,10 +437,14 @@ function App() {
       if (cachedItem && !cachedItem.content.includes("Export Error")) return cachedItem.content;
     }
 
-    const rawText = await driveService.getDocContent(file.id);
+    const rawText = isVerbatimMode
+      ? await driveService.getDocContentVerbatim(file.id)
+      : await driveService.getDocContent(file.id);
     if (rawText.startsWith("Export Error") || rawText.startsWith("Network Error") || rawText.startsWith("AUTH_EXPIRED")) return rawText; // Don't cache errors
     const MONO_SPACE = '\u3000';
-    const text = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/　/g, MONO_SPACE);
+    const text = isVerbatimMode
+      ? rawText.replace(/\r\n/g, '\n').replace(/　/g, MONO_SPACE)
+      : rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/　/g, MONO_SPACE);
 
     if (isCacheEnabled) {
       const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
@@ -569,10 +574,14 @@ function App() {
           }
 
           setStatus(`Fetching from Drive: ${file.name}...`);
-          const rawText = await driveService.getDocContent(file.id);
+          const rawText = isVerbatimMode
+            ? await driveService.getDocContentVerbatim(file.id)
+            : await driveService.getDocContent(file.id);
           if (rawText.startsWith("Export Error") || rawText.startsWith("Network Error") || rawText.startsWith("AUTH_EXPIRED")) return rawText; // Don't cache errors
           const MONO_SPACE = '\u3000';
-          const text = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/　/g, MONO_SPACE);
+          const text = isVerbatimMode
+            ? rawText.replace(/\r\n/g, '\n').replace(/　/g, MONO_SPACE)
+            : rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/　/g, MONO_SPACE);
 
           if (isCacheEnabled) {
             const cacheRaw = localStorage.getItem(CACHE_KEY) || '[]';
@@ -995,93 +1004,87 @@ function App() {
                     <p className="text-[9px] text-zinc-500 px-1 italic">
                       Note: Useful when standard login is blocked by browser restrictions.
                     </p>
-                    <div className="pt-2">
-                      <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-2 block ml-1">
-                        Clear Document Cache
-                      </label>
+                  </div>
+                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block mt-2">Cache Mode</label>
+
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Clear the document cache. \nPerforming this operation may cause the read position in updated documents to no longer point to the correct location. \n\nAre you sure you want to clear it?')) {
+                          localStorage.removeItem('g_content_cache');
+                          setStatus('Cache cleared');
+                        }
+                      }}
+                      className="w-full h-12 bg-white dark:bg-black border border-red-200 dark:border-red-900/50 text-red-500 rounded-xl px-4 font-bold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shadow-sm flex items-center justify-center mb-4"
+                    >
+                      Clear Cache
+                    </button>
+
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-bold">{isCacheEnabled ? "Cache Documents" : "No Cache Mode"}</span>
+                        <p className="text-[10px] text-zinc-500">Enable/Disable Google Docs caching.</p>
+                      </div>
                       <button
                         onClick={() => {
-                          if (window.confirm('Clear the document cache. \nPerforming this operation may cause the read position in updated documents to no longer point to the correct location. \n\nAre you sure you want to clear it?')) {
-                            localStorage.removeItem('g_content_cache');
-                            setStatus('Cache cleared');
-                          }
+                          const next = !isCacheEnabled;
+                          setIsCacheEnabled(next);
+                          localStorage.setItem('g_cache_enabled', next.toString());
                         }}
-                        className="w-full h-12 bg-white dark:bg-black border border-red-200 dark:border-red-900/50 text-red-500 rounded-xl px-4 font-bold text-[10px] uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shadow-sm flex items-center justify-center mb-4"
+                        className={cn(
+                          "w-12 h-6 rounded-full transition-all relative flex items-center px-1",
+                          isCacheEnabled ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700"
+                        )}
                       >
-                        Clear Cache
+                        <div className={cn(
+                          "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
+                          isCacheEnabled ? "translate-x-6" : "translate-x-0"
+                        )} />
                       </button>
-
-                      <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
-                        <div className="space-y-0.5">
-                          <span className="text-sm font-bold">{isCacheEnabled ? "Cache Documents" : "No Cache Mode"}</span>
-                          <p className="text-[10px] text-zinc-500">Enable/Disable Google Docs caching.</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const next = !isCacheEnabled;
-                            setIsCacheEnabled(next);
-                            localStorage.setItem('g_cache_enabled', next.toString());
-                          }}
-                          className={cn(
-                            "w-12 h-6 rounded-full transition-all relative flex items-center px-1",
-                            isCacheEnabled ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
-                            isCacheEnabled ? "translate-x-6" : "translate-x-0"
-                          )} />
-                        </button>
+                    </div>
+                    {!isCacheEnabled && (
+                      <p className="text-[10px] text-red-500/80 mt-2 px-1 leading-relaxed">
+                        * If you select "No Cache", it will take more time for communication because you always get the latest state of Google Drive. Also, reading position is saved but not used. It's always displayed from the beginning of the file. and, The file list will also always retrieve the most up-to-date information.
+                      </p>
+                    )}
+                  </div>
+                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block mt-2">Verbatim Mode</label>
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-bold">{isVerbatimMode ? "Verbatim (Docs API)" : "Standard (Drive API)"}</span>
+                        <p className="text-[10px] text-zinc-500">Preserve full-width spaces for grid layout.</p>
                       </div>
-                      {!isCacheEnabled && (
-                        <p className="text-[10px] text-red-500/80 mt-2 px-1 leading-relaxed">
-                          * If you select "No Cache", it will take more time for communication because you always get the latest state of Google Drive. Also, reading position is saved but not used. It's always displayed from the beginning of the file. and, The file list will also always retrieve the most up-to-date information.
-                        </p>
-                      )}
+                      <button
+                        onClick={() => {
+                          const next = !isVerbatimMode;
+                          setIsVerbatimMode(next);
+                          localStorage.setItem('g_verbatim_mode', next.toString());
+                        }}
+                        className={cn(
+                          "w-12 h-6 rounded-full transition-all relative flex items-center px-1",
+                          isVerbatimMode ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
+                          isVerbatimMode ? "translate-x-6" : "translate-x-0"
+                        )} />
+                      </button>
                     </div>
+                    {isVerbatimMode && (
+                      <p className="text-[10px] text-emerald-500/80 mt-2 px-1 leading-relaxed">
+                        * Verbatim mode uses the Google Docs API to retrieve content without abbreviation. Full-width spaces and line breaks are preserved as-is. Ideal for grid layouts on glasses.
+                      </p>
+                    )}
+                    {!isVerbatimMode && (
+                      <p className="text-[10px] text-zinc-500/80 mt-2 px-1 leading-relaxed">
+                        * Standard mode uses the Drive API. Some characters (full-width spaces, etc.) may be abbreviated.
+                      </p>
+                    )}
                   </div>
-                  <div>
-                    <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block mt-2">Color Theme</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {['system', 'light', 'dark'].map((t) => (
-                        <button
-                          key={t}
-                          onClick={() => setTheme(t as any)}
-                          className={cn(
-                            "h-12 rounded-xl text-xs font-bold uppercase transition-all",
-                            theme === t
-                              ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-                              : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
-                          )}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block">Auto Scroll Speed</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[10, 20, 30].map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => setScrollSpeed(s)}
-                          className={cn(
-                            "h-12 rounded-xl text-xs font-bold transition-all",
-                            scrollSpeed === s
-                              ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-                              : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
-                          )}
-                        >
-                          {s}s
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-500 mt-2 px-1">
-                      Speed applied next time you open a document.
-                    </p>
-                  </div>
-                  <div>
+
+                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
                     <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block mt-2">Enable Auto Mode</label>
                     <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
                       <div className="space-y-0.5">
@@ -1113,6 +1116,48 @@ function App() {
                         * Please enable auto-scroll on the glasses while the phone screen is active. It will continue working even if you lock the screen afterward.
                       </p>
                     )}
+                  </div>
+                  <div>
+                    <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block">Auto Scroll Speed</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[10, 20, 30].map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setScrollSpeed(s)}
+                          className={cn(
+                            "h-12 rounded-xl text-xs font-bold transition-all",
+                            scrollSpeed === s
+                              ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                              : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
+                          )}
+                        >
+                          {s}s
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-500 mt-2 px-1">
+                      Speed applied next time you open a document.
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block mt-2">Color Theme</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {['system', 'light', 'dark'].map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setTheme(t as any)}
+                          className={cn(
+                            "h-12 rounded-xl text-xs font-bold uppercase transition-all",
+                            theme === t
+                              ? "bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                              : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
+                          )}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

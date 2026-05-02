@@ -43,6 +43,7 @@ export class ReaderPage extends BasePage {
   private remainingSeconds: number = 0;
   private lastTickTime: number = 0;
   private userHasScrolled: boolean = false;
+  private showDateTime: boolean = false;
 
 
   constructor(
@@ -139,10 +140,14 @@ export class ReaderPage extends BasePage {
   }
 
   private paginate(text: string): string[] {
+    const isVerbatimMode = localStorage.getItem('g_verbatim_mode') === 'true';
     // Normalize text: 2+ empty lines -> 1 empty line
     const MONO_SPACE = '\u3000';
     const normalizedText = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/　/g, MONO_SPACE);
-    const rawLines = normalizedText.split("\n");
+    
+    // In verbatim mode, we only normalize line endings but keep all empty lines as-is
+    const verbatimText = text.replace(/\r\n/g, "\n");
+    const rawLines = isVerbatimMode ? verbatimText.split("\n") : normalizedText.split("\n");
 
     // Convert to visual lines using width-based wrapping
     let allVisualLines: string[] = [];
@@ -158,8 +163,8 @@ export class ReaderPage extends BasePage {
     let currentPage: string[] = [];
 
     for (const line of allVisualLines) {
-      // Avoid empty line at very top of a page
-      if (currentPage.length === 0 && line.trim() === "") continue;
+      // Avoid empty line at very top of a page (only in normal mode)
+      if (!isVerbatimMode && currentPage.length === 0 && line.trim() === "") continue;
 
       currentPage.push(line);
 
@@ -170,10 +175,13 @@ export class ReaderPage extends BasePage {
     }
 
     if (currentPage.length > 0) {
-      // Trim trailing empty lines
-      while (currentPage.length > 0 && currentPage[currentPage.length - 1].trim() === "") {
-        currentPage.pop();
+      // Trim trailing empty lines (only in normal mode)
+      if (!isVerbatimMode) {
+        while (currentPage.length > 0 && currentPage[currentPage.length - 1].trim() === "") {
+          currentPage.pop();
+        }
       }
+      
       if (currentPage.length > 0) {
         pages.push(currentPage.join("\n"));
       }
@@ -182,7 +190,25 @@ export class ReaderPage extends BasePage {
     return pages.length > 0 ? pages : ["(No content)"];
   }
 
+  private getFormattedDate(): string {
+    const now = new Date();
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    const day = days[now.getDay()];
+    const hh = now.getHours();
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const ss = String(now.getSeconds()).padStart(2, "0");
+    return `${y}/${m}/${d}(${day})${hh}:${mm}:${ss}`;
+  }
+
   private getHeaderText(): string {
+    // Toggle: show formatted date/time instead of filename
+    if (this.showDateTime) {
+      return this.getFormattedDate();
+    }
+
     const MAX_HEADER_WIDTH = 32; // Standard width limit for 380-wide header (approx units)
     const file = this.allFiles[this.currentFileIndex];
     const pageInfo = ` (${this.currentPageIndex + 1}/${this.pages.length})`;
@@ -456,7 +482,9 @@ export class ReaderPage extends BasePage {
     if (this.viewMode === GlassViewMode.AR) {
       return;
     }
-    return;
+    // Toggle header between filename info and current date/time
+    this.showDateTime = !this.showDateTime;
+    await this.updateDisplay();
   }
 
 

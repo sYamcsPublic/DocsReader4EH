@@ -312,6 +312,71 @@ export class GoogleDriveService {
     }
   }
 
+  /**
+   * Fetch document content via Google Docs API (documents.get).
+   * Unlike Drive API export, this preserves full-width spaces and
+   * other characters that would otherwise be abbreviated/stripped.
+   */
+  async getDocContentVerbatim(fileId: string): Promise<string> {
+    try {
+      const res = await this._fetch(`https://docs.googleapis.com/v1/documents/${fileId}`);
+
+      if (!res.ok) {
+        const error = await res.text();
+        console.error("Docs API fetch failed:", error);
+        return `Export Error: ${res.status}`;
+      }
+
+      const doc = await res.json();
+      const content = doc.body?.content;
+      if (!content) {
+        return "";
+      }
+
+      return this.extractTextFromStructuralElements(content);
+    } catch (err: any) {
+      if (err.message === "AUTH_EXPIRED") {
+        return "AUTH_EXPIRED";
+      }
+      console.error("Failed to fetch doc content (Docs API):", err);
+      return "Network Error";
+    }
+  }
+
+  /**
+   * Recursively extract plain text from Docs API structural elements.
+   * Handles paragraphs, tables, and table-of-contents.
+   */
+  private extractTextFromStructuralElements(elements: any[]): string {
+    let text = "";
+    for (const element of elements) {
+      if (element.paragraph) {
+        for (const elem of element.paragraph.elements || []) {
+          if (elem.textRun) {
+            text += elem.textRun.content;
+          }
+          // InlineObjectElement, AutoText etc. are skipped
+        }
+      } else if (element.table) {
+        // Recursively process table cells
+        for (const row of element.table.tableRows || []) {
+          for (const cell of row.tableCells || []) {
+            if (cell.content) {
+              text += this.extractTextFromStructuralElements(cell.content);
+            }
+          }
+        }
+      } else if (element.tableOfContents) {
+        // Table of contents has its own content array
+        if (element.tableOfContents.content) {
+          text += this.extractTextFromStructuralElements(element.tableOfContents.content);
+        }
+      }
+      // sectionBreak and other structural elements are intentionally skipped
+    }
+    return text;
+  }
+
   async findFileByName(name: string): Promise<string | null> {
     const query = `name = '${name}' and trashed = false`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id)`;
