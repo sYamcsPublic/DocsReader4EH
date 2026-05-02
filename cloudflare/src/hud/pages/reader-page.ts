@@ -144,7 +144,7 @@ export class ReaderPage extends BasePage {
     // Normalize text: 2+ empty lines -> 1 empty line
     const MONO_SPACE = '\u3000';
     const normalizedText = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/　/g, MONO_SPACE);
-    
+
     // In verbatim mode, we only normalize line endings but keep all empty lines as-is
     const verbatimText = text.replace(/\r\n/g, "\n");
     const rawLines = isVerbatimMode ? verbatimText.split("\n") : normalizedText.split("\n");
@@ -175,13 +175,9 @@ export class ReaderPage extends BasePage {
     }
 
     if (currentPage.length > 0) {
-      // Trim trailing empty lines (only in normal mode)
-      if (!isVerbatimMode) {
-        while (currentPage.length > 0 && currentPage[currentPage.length - 1].trim() === "") {
-          currentPage.pop();
-        }
+      while (currentPage.length > 0 && currentPage[currentPage.length - 1].trim() === "") {
+        currentPage.pop();
       }
-      
       if (currentPage.length > 0) {
         pages.push(currentPage.join("\n"));
       }
