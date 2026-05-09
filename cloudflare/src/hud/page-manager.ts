@@ -27,8 +27,8 @@ export abstract class BasePage {
 
 
   init(
-    navigate: (page: BasePage) => Promise<boolean>, 
-    bridge: EvenAppBridge, 
+    navigate: (page: BasePage) => Promise<boolean>,
+    bridge: EvenAppBridge,
     refreshBattery: (force?: boolean) => Promise<number>,
     notifySettingsChanged: (key: string, value: string) => void
   ) {
@@ -52,7 +52,7 @@ export abstract class BasePage {
   onScrollDown(_event: any) { }
   onClick(_event: any) { }
   onDoubleClick(_event: any) { }
-  
+
   // New: specific update for battery
   async onBatteryUpdate(_level: number): Promise<void> { }
   async onAutoTick(): Promise<void> { }
@@ -66,12 +66,15 @@ export abstract class BasePage {
     }
 
     // 2. Half-width digits: Balanced for proportional font
-    if (char === '1') {
-      return 0.8;
+    if (/[0-9]/.test(char)) {
+      return 1.12;
     }
-    if (/[02-9]/.test(char)) {
-      return 1.1;
-    }
+    // if (char === '1') {
+    //   return 0.8;
+    // }
+    // if (/[02-9]/.test(char)) {
+    //   return 1.1;
+    // }
 
     // 3. Wide half-width capitals (A-Z,%)
     // if (/[A-Z]/.test(char)) {
@@ -173,7 +176,7 @@ export class PageManager {
 
     this.bridge.onDeviceStatusChanged(async (status: any) => {
       console.log(`📱 Device status changed: ${JSON.stringify(status)}`);
-      
+
       if (!status) return;
 
       // Handle disconnection
@@ -188,7 +191,7 @@ export class PageManager {
       // Update battery ONLY when connected to avoid "0%" during initialization
       if (status.connectType === 'connected') {
         const actualLevel = status.batteryLevel ?? status.battery_level;
-        
+
         if (typeof actualLevel === 'number') {
           console.log(`🔋 Battery level confirmed: ${actualLevel}%`);
           this.batteryLevel = actualLevel;
@@ -272,7 +275,7 @@ export class PageManager {
       localStorage.setItem('g_glass_view_mode', this.viewMode);
       await this.renderCurrentMode();
     }
-    
+
     this.updateStatus();
     await this.refreshAutoUpdate();
 
@@ -285,7 +288,7 @@ export class PageManager {
 
   private updateStatus() {
     if (!this.onStatusUpdate || !this.currentPage) return;
-    
+
     let status = "Glasses: ";
     if (this.currentPage.pageType === "ReaderPage") {
       status += "Reading";
@@ -298,7 +301,7 @@ export class PageManager {
     } else if (this.viewMode === GlassViewMode.HIDDEN) {
       status += " (Hidden)";
     }
-    
+
     this.onStatusUpdate(status);
   }
 
@@ -306,45 +309,45 @@ export class PageManager {
     if (this.viewMode === GlassViewMode.NORMAL) return rendered;
 
     if (this.viewMode === GlassViewMode.AR) {
-        // Keep ONLY the header containers (Main header, Battery, Mode, Cache)
-        if (rendered.textObject) {
-            rendered.textObject = rendered.textObject.filter(o => 
-              o.containerName && (
-                o.containerName.includes("hdr") || 
-                o.containerName.includes("header") || 
-                o.containerName.includes("battery") || 
-                o.containerName.includes("mode") ||
-                o.containerName.includes("cache")
-              )
-            );
-            // CRITICAL: Exactly ONE container must have isEventCapture: 1.
-            let captureIdx = rendered.textObject.findIndex(o => o.containerName && o.containerName.includes("mode"));
-            if (captureIdx === -1) captureIdx = 0;
+      // Keep ONLY the header containers (Main header, Battery, Mode, Cache)
+      if (rendered.textObject) {
+        rendered.textObject = rendered.textObject.filter(o =>
+          o.containerName && (
+            o.containerName.includes("hdr") ||
+            o.containerName.includes("header") ||
+            o.containerName.includes("battery") ||
+            o.containerName.includes("mode") ||
+            o.containerName.includes("cache")
+          )
+        );
+        // CRITICAL: Exactly ONE container must have isEventCapture: 1.
+        let captureIdx = rendered.textObject.findIndex(o => o.containerName && o.containerName.includes("mode"));
+        if (captureIdx === -1) captureIdx = 0;
 
-            rendered.textObject.forEach((o, index) => {
-              o.isEventCapture = (index === captureIdx) ? 1 : 0;
-            });
-        }
+        rendered.textObject.forEach((o, index) => {
+          o.isEventCapture = (index === captureIdx) ? 1 : 0;
+        });
+      }
 
-        rendered.listObject = [];
-        rendered.imageObject = [];
-        rendered.containerTotalNum = rendered.textObject?.length || 0;
+      rendered.listObject = [];
+      rendered.imageObject = [];
+      rendered.containerTotalNum = rendered.textObject?.length || 0;
     } else if (this.viewMode === GlassViewMode.HIDDEN) {
-        // Must keep 1 container for evenHub to capture double tap
-        rendered.textObject = [{
-          xPosition: 0,
-          yPosition: 0,
-          width: 1,
-          height: 1,
-          borderWidth: 0,
-          containerID: 99,
-          containerName: "hidden-pad",
-          isEventCapture: 1,
-          content: "",
-        }];
-        rendered.listObject = [];
-        rendered.imageObject = [];
-        rendered.containerTotalNum = 1;
+      // Must keep 1 container for evenHub to capture double tap
+      rendered.textObject = [{
+        xPosition: 0,
+        yPosition: 0,
+        width: 1,
+        height: 1,
+        borderWidth: 0,
+        containerID: 99,
+        containerName: "hidden-pad",
+        isEventCapture: 1,
+        content: "",
+      }];
+      rendered.listObject = [];
+      rendered.imageObject = [];
+      rendered.containerTotalNum = 1;
     }
     return rendered;
   }
@@ -372,17 +375,17 @@ export class PageManager {
     page.viewMode = this.viewMode;
     page.batteryLevel = this.batteryLevel; // Sync battery level to new page
     page.init(
-        this.load.bind(this), 
-        this.bridge, 
-        this.refreshBattery.bind(this),
-        (key, value) => {
-            if (key === 'g_auto_enabled') {
-              this.refreshAutoUpdate();
-            }
-            if (this.onSettingsChanged) {
-              this.onSettingsChanged(key, value);
-            }
+      this.load.bind(this),
+      this.bridge,
+      this.refreshBattery.bind(this),
+      (key, value) => {
+        if (key === 'g_auto_enabled') {
+          this.refreshAutoUpdate();
         }
+        if (this.onSettingsChanged) {
+          this.onSettingsChanged(key, value);
+        }
+      }
     );
 
     this.updateStatus();
