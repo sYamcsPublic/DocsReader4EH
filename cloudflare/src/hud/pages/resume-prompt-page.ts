@@ -47,8 +47,8 @@ export class ResumePromptPage extends BasePage {
     return [
       "  Resume reading?",
       "",
-      `  ${yesPrefix}Yes`,
-      `  ${noPrefix}No`,
+      `           ${yesPrefix}Yes`,
+      `           ${noPrefix}No`,
     ].join("\n");
   }
 
@@ -59,9 +59,9 @@ export class ResumePromptPage extends BasePage {
       containerTotalNum: 1,
       textObject: [
         new TextContainerProperty({
-          xPosition: 60,
+          xPosition: 200,
           yPosition: 70,
-          width: 460,
+          width: 180,
           height: 140,
           borderWidth: 1,
           borderColor: 0xFFFFFFFF,
