@@ -5,6 +5,7 @@ import {
 import { BasePage, type PageRenderResult, GlassViewMode } from "../page-manager";
 import { ReaderPage } from "./reader-page";
 import { LoadingPage } from "./loading-page";
+import { ResumePromptPage } from "./resume-prompt-page";
 
 export interface GoogleFile {
   id: string;
@@ -138,7 +139,8 @@ export class FileListPage extends BasePage {
     for (let i = start; i < Math.min(start + DISPLAY_COUNT, this.files.length); i++) {
       const file = this.files[i];
       const ratio = this.cachedPositions[file.id];
-      const ratioStr = (this.isCacheEnabled && i === this.selectedIndex && ratio !== undefined) ? ` [${(ratio * 100).toFixed(1)}%]` : "";
+      const showRatio = (this.isCacheEnabled || this.isResumeReadingEnabled) && i === this.selectedIndex && ratio !== undefined;
+      const ratioStr = showRatio ? ` [${(ratio * 100).toFixed(1)}%]` : "";
       const prefixStr = i === this.selectedIndex ? "> " : "  ";
 
       // Calculate widths of prefix and ratio to find available space for filename
@@ -352,6 +354,27 @@ export class FileListPage extends BasePage {
   // openSelectedFile: shared logic for file open (called from both onClick and onListSelect)
   private async openSelectedFile() {
     const file = this.files[this.selectedIndex];
+
+    // Check if Resume Reading prompt should be shown
+    if (this.isResumeReadingEnabled) {
+      const positions = this.cachedPositions;
+      const savedRatio = positions[file.id];
+      if (savedRatio !== undefined && savedRatio > 0.001) {
+        // Show the resume prompt dialog on glasses
+        const promptPage = new ResumePromptPage(
+          this.files,
+          this.selectedIndex,
+          this.onFileSelected,
+          this
+        );
+        await this.navigate(promptPage);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        await this.navigate(promptPage);
+        return; // ResumePromptPage handles the rest
+      }
+    }
+
+    // Default flow: Loading -> ReaderPage
     await this.navigate(new LoadingPage(`Loading:\n${this.truncateName(file.name, 47)}`));
 
     const content = await this.onFileSelected(file);

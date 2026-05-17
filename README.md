@@ -26,7 +26,7 @@ Even Realities G2 グラスで Google ドキュメントを閲覧するための
   - **Example 2: Automatic updates of short text or personal notes (used as a simple dashboard that can be easily customized)**  
     With the update on April 18, 2026, you can now set the option to “**Disable Cache**,” making it possible to use GAS or similar tools to automatically update information periodically, or to view your personal notes in Glass in real time. As an example of how to use GAS, sample code is available at `https://github.com/sYamcsPublic/DocsReader4EH/blob/main/gas/code.gs`. Please make good use of it.
 - **Auto-scroll / Auto-update**: Includes automatic scrolling and update functions (with some limitations).
-- **Multilingual Character Support**: Supports both Japanese and English text using full-width characters (kanji, hiragana, katakana), half-width alphanumerics, and half-width special characters.
+- **Multilingual Character Support**: Supports both Japanese and English text using full-width characters (kanji, hiragana, katakana), half-width alphanumerics, and half-width special characters. *Note: Currently, only Japanese and English are supported.*
 
 ## 2. Regarding Certain Limitations
 **Prerequisite: Do not close the Even app on your smartphone (it is okay to lock your phone).**
@@ -114,11 +114,15 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
   - **Clear Cache**: Clears the locally stored document cache. Use this if updates from Google Drive are not being reflected. 
   - **Cache Documents (Toggle)**: Enable or disable the document cache.
   > [!IMPORTANT] **Important Notes Regarding “No Cache Mode”**
-  > - Your reading position will not be saved or restored (you will always start from the beginning).
+  > - Your reading position is saved but by default it starts from the beginning of the file. You can enable the "Resume Reading Prompt" setting to choose whether to resume from your last position.
   > - The app always fetches the latest data from Google Drive when you navigate to the file list screen.
   > - Since the app accesses Google Drive every time you view a document, loading may take some time.
   > - Due to frequent access to Google Drive, data retrieval may occasionally fail. If this happens, double-tap to return to the previous screen and try accessing it again.
   > - Google login may become unstable due to token refresh. If this happens, please close and restart the app on Glass, or relaunch this app from the Even app on your smartphone.
+- **Resume Reading Prompt**: 
+  - When enabled, you will be asked whether to resume from your last reading position or start from the beginning each time you open a document.
+  - On the PWA/smartphone, a standard confirmation dialog is displayed. On glasses, a custom dialog with Yes/No options (selectable by scrolling) is shown.
+  - This setting is disabled by default. When the reading position prompt is enabled, the read percentage is also shown in the file list.
 - **Verbatim Mode**: 
   - Uses the Google Docs API to retrieve content without abbreviation. Full-width spaces and line breaks are preserved as-is. Ideal for grid layouts on glasses.
 - **Enable Auto Mode**: Specify whether to enable Auto Mode. (Enabling Auto Mode will increase battery consumption.)
@@ -127,7 +131,7 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 
 ### 4.3 Document List Screen
 - Displays a list of Google Docs in the specified folder.
-- Shows the read percentage for each document.
+- Shows the read percentage for each document (when Cache mode is enabled, or when the Resume Reading Prompt is enabled).
 - Tap a document to transition to the "Content View".
 - **On Glasses**: Double-tap to cycle through modes:
   - **Normal Mode**: Shows document list (*1).
@@ -242,6 +246,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **2026/04/23**: Readme update (introduction of use cases), placement of GAS code for use cases.
 - **2026/04/25**: Major revision of the GAS code in the usage examples, Display the read percentage even when “Cache Off” is selected on the PWA app's content view screen.
 - **2026/05/02**: Added a feature that allows you to toggle between displaying the filename on the first line and the current date and time with a single tap on the document view screen.  Added support for the Google Docs API (Verbatim mode), enabling the display of full-width characters and layout without any omissions. Added a feature to the GAS sample code that automatically generates a calendar using a monospaced font for full-width characters.
+- **2026/05/17**: Added the "Resume Reading Prompt" feature that asks whether to resume from the last reading position before opening a document. Reading percentage is now also displayed in the file list when this feature is enabled. Updated the Cache Mode description.
 
 ---
 
@@ -262,7 +267,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
   - **活用例2：短文の自動更新や自分専用メモ（カスタマイズが容易な簡易ダッシュボードとして利用）**  
     2026/04/18のアップデートで「**キャッシュを無効**」に設定できるようになったため、GASなどを利用して定期的に自動更新される情報や、自身のメモを逐次グラスで確認するといった使い方も可能です。GASの活用例として `https://github.com/sYamcsPublic/DocsReader4EH/blob/main/gas/code.gs` にサンプルコードを配置しています。ぜひ有効活用してください。
 - **自動機能**: 一定の制限はありますが、自動スクロール/自動更新機能があります。
-- **多言語文字対応**: 全角文字（漢字・ひらがな・カタカナ等）・半角英数字・半角特殊文字を使用した日本語と英語のテキスト表示に対応しています。
+- **多言語文字対応**: 全角文字（漢字・ひらがな・カタカナ等）・半角英数字・半角特殊文字を使用した日本語と英語のテキスト表示に対応しています。※現在、当アプリでサポートしている言語は日本語と英語のみです。
 
 ## 2. 一定の制限について
 **前提条件：スマホ内のEvenアプリのタスクは削除しないでください（スマホのロックはOKです）。**
@@ -350,11 +355,15 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
   - **Clear Cache**: ローカルに保存されたドキュメントのキャッシュをクリアします。Googleドライブ側の更新状態が反映されない場合に利用してください。
   - **Cache Documents (Toggle)**: ドキュメントキャッシュの有効/無効を切り替えます。
   > [!IMPORTANT] **「No Cache Mode」（キャッシュ無効状態）における注意点**
-  > - 既読位置の保存および復元は行われません（常に最初から開始されます）。
+  > - 既読位置は保存されますが、デフォルトでは最初から表示されるようになっています。「Resume Reading Prompt」設定を有効にすることで、前回の既読位置から再開するかどうかを選択できます。
   > - ファイル一覧画面に遷移した際にも、常に最新のGoogleドライブの状況を取得します。
   > - 本文を表示するたびにGoogleドライブにアクセスするため、表示に時間がかかる場合があります。
   > - Googleドライブへのアクセスを頻繁に行うため、データ取得に失敗することがあります。その際は、ダブルタップで前画面に戻って再度アクセスし直してください。
   > - トークンリフレッシュの影響でGoogleログインが不安定になることがあります。その際は、グラス上で一度アプリを終了して再起動するか、スマホのEvenアプリから本アプリを再度起動し直してください。
+- **Resume Reading Prompt**: 
+  - 有効にすると、ドキュメントを開くたびに前回の既読位置から再開するか、最初から読むかを確認するダイアログが表示されます。
+  - PWA/スマホではブラウザ標準の確認ダイアログが表示されます。グラス側では、上下スクロールでYes/Noを選択する独自ダイアログが表示されます。
+  - この設定はデフォルトで無効です。有効にすると、ファイルリスト画面にも既読割合が表示されるようになります。
 - **Verbatim Mode**: 
   - Google Docs APIを使用して、全角空白や改行を省略せずにコンテンツを取得します。グラスでのグリッド表示に最適です。
 - **Enable Auto Mode**: Auto Mode を許可するかどうかを指定。（Auto Mode を許可すると、バッテリー消費量が増加します）
@@ -363,7 +372,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 
 ### 4.3 「Document List」画面
 - 指定フォルダ直下のGoogleドキュメント一覧を表示。
-- 既読割合（%）が表示されます。
+- 既読割合（%）が表示されます（キャッシュモード有効時、または「Resume Reading Prompt」有効時）。
 - ドキュメントをタップすると「本文表示」画面へ遷移します。
 - **グラス側操作**: ダブルタップするたびに以下のモードを切り替えます。
   - **通常モード**: Googleドキュメント一覧を表示 (*1)
@@ -486,6 +495,7 @@ npm run pack
 - **2026/04/23**: readmeの更新（活用例の紹介）、活用例のGASコード配置。
 - **2026/04/25**: 活用例のGASコード大幅見直し、PWAアプリ本文表示画面において本文キャッシュOFF選択時も既読割合を表示。
 - **2026/05/02**: 本文表示時にシングルタップすることで表示内容を切り替えられる機能（ファイル名 or 現在日時）を追加。Google Docs API（Verbatimモード）に対応し、全角文字やレイアウトを省略せずに表示可能に。GASサンプルコードに全角文字の等角フォントを活かしたカレンダー自動生成機能を追加。
+- **2026/05/17**: ドキュメントを開く際に前回の既読位置から再開するかを確認する「Resume Reading Prompt」機能を追加。本機能の有効時はファイルリスト画面にも既読割合を表示。Cache Modeの説明文を更新。
 
 ---
 

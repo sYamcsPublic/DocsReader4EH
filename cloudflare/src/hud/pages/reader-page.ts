@@ -51,7 +51,8 @@ export class ReaderPage extends BasePage {
     currentIndex: number,
     content: string,
     listPage: BasePage,
-    onFileSelected: (file: any) => Promise<string>
+    onFileSelected: (file: any) => Promise<string>,
+    resumeFromPosition?: boolean // true = resume, false = start from beginning, undefined = default cache-based logic
   ) {
     super();
     this.allFiles = allFiles;
@@ -65,13 +66,18 @@ export class ReaderPage extends BasePage {
     const positions = getReadingPositions();
     const storedVal = positions[file.id] || 0;
 
-    if (storedVal > 1.1) {
+    if (resumeFromPosition === false) {
+      // User explicitly chose "No" in resume reading dialog
+      this.currentPageIndex = 0;
+      this.userHasScrolled = false;
+    } else if (storedVal > 1.1) {
       // Old format (page index). Use as is.
       this.currentPageIndex = Math.min(Math.round(storedVal), this.pages.length - 1);
       this.userHasScrolled = true; // Mark as scrolled to allow overwriting old page index with ratio later
     } else {
       // New format (ratio)
-      const ratio = (this.isCacheEnabled && storedVal <= 1.1) ? storedVal : 0;
+      const shouldResume = resumeFromPosition === true || this.isCacheEnabled;
+      const ratio = (shouldResume && storedVal <= 1.1) ? storedVal : 0;
       this.currentPageIndex = Math.round(ratio * (this.pages.length - 1));
       this.userHasScrolled = false;
     }

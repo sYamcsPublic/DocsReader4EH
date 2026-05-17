@@ -18,6 +18,7 @@ export abstract class BasePage {
   public viewMode: GlassViewMode = GlassViewMode.NORMAL;
   public batteryLevel: number = 100; // Default to 100
   public get isCacheEnabled(): boolean { return localStorage.getItem('g_cache_enabled') !== 'false'; }
+  public get isResumeReadingEnabled(): boolean { return localStorage.getItem('g_resume_reading') === 'true'; }
   public pageType: string = "BasePage";
   protected bridge!: EvenAppBridge;
   protected navigate!: (page: BasePage) => Promise<boolean>;

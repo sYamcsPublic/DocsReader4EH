@@ -5,6 +5,7 @@ import { GoogleDriveService, type GoogleUser } from './lib/google-drive';
 import { PageManager } from './hud/page-manager';
 import { FileListPage } from './hud/pages/file-list-page';
 import { ReaderPage } from './hud/pages/reader-page';
+import { ResumePromptPage } from './hud/pages/resume-prompt-page';
 import {
   LogIn,
   Glasses,
@@ -50,6 +51,7 @@ function App() {
   const [isAutoAllowed, setIsAutoAllowed] = useState(localStorage.getItem('g_auto_allowed') === 'true');
   const [isAutoEnabled, setIsAutoEnabled] = useState(localStorage.getItem('g_auto_enabled') === 'true');
   const [isCacheEnabled, setIsCacheEnabled] = useState(localStorage.getItem('g_cache_enabled') !== 'false');
+  const [isResumeReadingEnabled, setIsResumeReadingEnabled] = useState(localStorage.getItem('g_resume_reading') === 'true');
   const [isVerbatimMode, setIsVerbatimMode] = useState(localStorage.getItem('g_verbatim_mode') === 'true');
   const [showHelp, setShowHelp] = useState(false);
   const [helpContent, setHelpContent] = useState("");
@@ -153,7 +155,8 @@ function App() {
     localStorage.setItem('g_folder_id', folderId);
     localStorage.setItem('g_auto_allowed', isAutoAllowed.toString());
     localStorage.setItem('g_cache_enabled', isCacheEnabled.toString());
-  }, [clientId, clientSecret, folderId, isAutoAllowed, isCacheEnabled]);
+    localStorage.setItem('g_resume_reading', isResumeReadingEnabled.toString());
+  }, [clientId, clientSecret, folderId, isAutoAllowed, isCacheEnabled, isResumeReadingEnabled]);
 
   useEffect(() => {
     localStorage.setItem('g_auto_enabled', isAutoEnabled.toString());
@@ -622,15 +625,43 @@ function App() {
         const lastFile = fetchedFiles.find(f => f.id === lastFileId);
         if (lastFile) {
           try {
-            const content = await onFileSelected(lastFile);
             const idx = fetchedFiles.indexOf(lastFile);
-            initialPage = new ReaderPage(
-              fetchedFiles,
-              idx,
-              content,
-              initialListPage,
-              onFileSelected
-            );
+            const isResumeReading = localStorage.getItem('g_resume_reading') === 'true';
+
+            if (isResumeReading) {
+              // Check if there's a saved reading position worth resuming
+              const positions = JSON.parse(localStorage.getItem('g_reading_positions') || '{}');
+              const savedRatio = positions[lastFile.id];
+              if (savedRatio !== undefined && savedRatio > 0.001) {
+                // Show ResumePromptPage instead of directly opening reader
+                initialPage = new ResumePromptPage(
+                  fetchedFiles,
+                  idx,
+                  onFileSelected,
+                  initialListPage
+                );
+              } else {
+                // No meaningful saved position, open reader normally
+                const content = await onFileSelected(lastFile);
+                initialPage = new ReaderPage(
+                  fetchedFiles,
+                  idx,
+                  content,
+                  initialListPage,
+                  onFileSelected
+                );
+              }
+            } else {
+              // Resume reading prompt disabled, open reader normally
+              const content = await onFileSelected(lastFile);
+              initialPage = new ReaderPage(
+                fetchedFiles,
+                idx,
+                content,
+                initialListPage,
+                onFileSelected
+              );
+            }
           } catch (err) {
             handleError(err, "Failed to restore reader state");
           }
@@ -1044,7 +1075,42 @@ function App() {
                     </div>
                     {!isCacheEnabled && (
                       <p className="text-[10px] text-red-500/80 mt-2 px-1 leading-relaxed">
-                        * If you select "No Cache", it will take more time for communication because you always get the latest state of Google Drive. Also, reading position is saved but not used. It's always displayed from the beginning of the file. and, The file list will also always retrieve the most up-to-date information.
+                        * If you select "No Cache", it will take more time for communication because you always get the latest state of Google Drive. Also, reading position is saved but by default it starts from the beginning of the file. You can enable the "Resume Reading Prompt" setting below to choose whether to resume from your last position. The file list will also always retrieve the most up-to-date information.
+                      </p>
+                    )}
+                  </div>
+                  <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <label className="text-xs text-zinc-500 dark:text-zinc-500 uppercase tracking-widest font-bold mb-3 block mt-2">Resume Reading Prompt</label>
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-bold">{isResumeReadingEnabled ? "Prompt Enabled" : "Prompt Disabled"}</span>
+                        <p className="text-[10px] text-zinc-500">Ask whether to resume from last position.</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const next = !isResumeReadingEnabled;
+                          setIsResumeReadingEnabled(next);
+                          localStorage.setItem('g_resume_reading', next.toString());
+                        }}
+                        className={cn(
+                          "w-12 h-6 rounded-full transition-all relative flex items-center px-1",
+                          isResumeReadingEnabled ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
+                          isResumeReadingEnabled ? "translate-x-6" : "translate-x-0"
+                        )} />
+                      </button>
+                    </div>
+                    {isResumeReadingEnabled && (
+                      <p className="text-[10px] text-emerald-500/80 mt-2 px-1 leading-relaxed">
+                        * Before opening a document, you will be asked whether to resume from your last reading position or start from the beginning.
+                      </p>
+                    )}
+                    {!isResumeReadingEnabled && (
+                      <p className="text-[10px] text-zinc-500/80 mt-2 px-1 leading-relaxed">
+                        * Documents will open using the default behavior (resume in Cache mode, start from beginning in No Cache mode).
                       </p>
                     )}
                   </div>
@@ -1218,6 +1284,7 @@ function App() {
             isAutoEnabled={isAutoEnabled}
             isAutoAllowed={isAutoAllowed}
             isCacheEnabled={isCacheEnabled}
+            isResumeReadingEnabled={isResumeReadingEnabled}
             onAutoModeChange={(mode: boolean) => setIsAutoEnabled(mode)}
             onClose={() => setIsPhoneReaderOpen(false)}
             onFetch={onPhoneFileSelected}
@@ -1241,7 +1308,7 @@ function App() {
 }
 
 // --- Mobile Reader Component ---
-function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabled, isAutoAllowed, isCacheEnabled, onUpdateProgress, handleError, onRefreshFiles, onAutoModeChange }: any) {
+function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabled, isAutoAllowed, isCacheEnabled, isResumeReadingEnabled, onUpdateProgress, handleError, onRefreshFiles, onAutoModeChange }: any) {
   const [viewMode, setViewMode] = useState<'list' | 'reader'>(() => {
     const lastPageType = localStorage.getItem('g_last_page_type');
     return (lastPageType === 'reader') ? 'reader' : 'list';
@@ -1266,6 +1333,7 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const selectedRef = React.useRef<HTMLButtonElement>(null);
   const isJumpingRef = React.useRef(false);
+  const resumeChoiceRef = React.useRef<boolean | undefined>(undefined);
 
   // Load content
   const loadFile = async (idx: number, scrollType: 'top' | 'bottom' | 'ratio' = 'ratio') => {
@@ -1282,21 +1350,36 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
 
       setTimeout(() => {
         if (!scrollRef.current) return;
-        const { scrollHeight, clientHeight } = scrollRef.current;
-        if (scrollType === 'top') {
-          scrollRef.current.scrollTop = 0;
-        } else if (scrollType === 'bottom') {
-          scrollRef.current.scrollTop = scrollHeight - clientHeight;
-        } else {
-          const positions = JSON.parse(localStorage.getItem('g_reading_positions') || '{}');
-          const ratio = isCacheEnabled ? (positions[file.id] || 0) : 0;
-          setCurrentRatio(ratio);
-          // Compensate for layout differences: scroll to (ratio * depth) - half screen
-          const targetScroll = ratio * (scrollHeight - clientHeight);
-          scrollRef.current.scrollTop = Math.max(0, targetScroll - (clientHeight * 0.5));
-        }
-        // Wait longer for heavy text layouts to finish settling before unlocking the scroll listener
-        setTimeout(() => { isJumpingRef.current = false; }, 800);
+        // Use rAF to ensure browser has completed layout/paint after content render
+        requestAnimationFrame(() => {
+          // console.log(`[App] rAF scrollType:${scrollType}, isJumpingRef.current:${isJumpingRef.current}, resumeChoiceRef.current:${resumeChoiceRef.current}`);
+          if (!scrollRef.current) return;
+          const { scrollHeight, clientHeight } = scrollRef.current;
+          if (scrollType === 'top') {
+            scrollRef.current.scrollTop = 0;
+          } else if (scrollType === 'bottom') {
+            scrollRef.current.scrollTop = scrollHeight - clientHeight;
+          } else {
+            const positions = JSON.parse(localStorage.getItem('g_reading_positions') || '{}');
+            let ratio: number;
+            if (resumeChoiceRef.current === false) {
+              ratio = 0; // User chose "No" in resume dialog
+            } else if (resumeChoiceRef.current === true || isCacheEnabled) {
+              ratio = positions[file.id] || 0;
+            } else {
+              ratio = 0;
+            }
+            setCurrentRatio(ratio);
+            // Compensate for layout differences: scroll to (ratio * depth) - half screen
+            const targetScroll = ratio * (scrollHeight - clientHeight);
+            scrollRef.current.scrollTop = Math.max(0, targetScroll - (clientHeight * 0.5));
+          }
+          // Wait longer for heavy text layouts to finish settling before unlocking the scroll listener
+          setTimeout(() => {
+            isJumpingRef.current = false;
+            resumeChoiceRef.current = undefined; // Reset after use
+          }, 800);
+        });
       }, 150);
     } catch (err) {
       handleError(err, "Failed to load document");
@@ -1309,6 +1392,16 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
   useEffect(() => {
     setSimulatorBannerVisible(false);
     if (viewMode === 'reader') {
+      // On initial restore from saved reader state, check if resume reading prompt should be shown
+      if (isResumeReadingEnabled && resumeChoiceRef.current === undefined) {
+        const positions = JSON.parse(localStorage.getItem('g_reading_positions') || '{}');
+        const file = files[currentIdx];
+        const savedRatio = file ? positions[file.id] : undefined;
+        if (savedRatio !== undefined && savedRatio > 0.001) {
+          const resume = window.confirm("Resume from where you left off?\n前回の続きから読みますか？");
+          resumeChoiceRef.current = resume;
+        }
+      }
       loadFile(currentIdx);
     } else {
       // List view: scroll selected into view
@@ -1402,7 +1495,20 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
               <button
                 key={file.id}
                 ref={currentIdx === idx ? selectedRef : null}
-                onClick={() => {
+                onClick={async () => {
+                  // Check if Resume Reading prompt should be shown
+                  if (isResumeReadingEnabled) {
+                    const pos = JSON.parse(localStorage.getItem('g_reading_positions') || '{}');
+                    const savedRatio = pos[files[idx].id];
+                    if (savedRatio !== undefined && savedRatio > 0.001) {
+                      const resume = window.confirm("Resume from where you left off?\n前回の続きから読みますか？");
+                      resumeChoiceRef.current = resume;
+                    } else {
+                      resumeChoiceRef.current = undefined;
+                    }
+                  } else {
+                    resumeChoiceRef.current = undefined;
+                  }
                   setCurrentIdx(idx);
                   setViewMode('reader');
                 }}
@@ -1416,7 +1522,7 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
                   <span className={cn("font-bold truncate", currentIdx === idx ? "text-emerald-400" : "text-zinc-800 dark:text-zinc-300")}>{file.name}</span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {currentIdx === idx && ratio !== undefined && isCacheEnabled && (
+                  {currentIdx === idx && ratio !== undefined && (isCacheEnabled || isResumeReadingEnabled) && (
                     <span className="text-[10px] text-zinc-600 dark:text-zinc-300 font-bold tracking-wider bg-zinc-200 dark:bg-zinc-700/80 px-2 py-1 rounded-md border border-zinc-300 dark:border-zinc-600">
                       {(ratio * 100).toFixed(1)}%
                     </span>
