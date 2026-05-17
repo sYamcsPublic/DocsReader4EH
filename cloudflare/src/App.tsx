@@ -1398,7 +1398,7 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
         const file = files[currentIdx];
         const savedRatio = file ? positions[file.id] : undefined;
         if (savedRatio !== undefined && savedRatio > 0.001) {
-          const resume = window.confirm("Resume from where you left off?\n前回の続きから読みますか？");
+          const resume = window.confirm("Resume from where you left off?");
           resumeChoiceRef.current = resume;
         }
       }
@@ -1501,7 +1501,7 @@ function MobileReader({ files, onClose, onFetch, initialScrollSpeed, isAutoEnabl
                     const pos = JSON.parse(localStorage.getItem('g_reading_positions') || '{}');
                     const savedRatio = pos[files[idx].id];
                     if (savedRatio !== undefined && savedRatio > 0.001) {
-                      const resume = window.confirm("Resume from where you left off?\n前回の続きから読みますか？");
+                      const resume = window.confirm("Resume from where you left off?");
                       resumeChoiceRef.current = resume;
                     } else {
                       resumeChoiceRef.current = undefined;
