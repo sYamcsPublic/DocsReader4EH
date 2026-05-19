@@ -66,40 +66,44 @@ export abstract class BasePage {
       return 2.0;
     }
 
-    // 2. Half-width digits: Balanced for proportional font
-    if (/[0-9]/.test(char)) {
-      return 1.12;
-    }
-    // if (char === '1') {
-    //   return 0.8;
-    // }
-    // if (/[02-9]/.test(char)) {
-    //   return 1.1;
-    // }
+    // 2. Alphanumeric & Symbols lookup table based on hardware measurement
+    const CHAR_WIDTHS: Record<string, number> = {
+      // Half-width digits
+      '1': 0.75,
+      '0': 1.15, '2': 1.15, '3': 1.15, '4': 1.15, '5': 1.15,
+      '6': 1.15, '7': 1.15, '8': 1.15, '9': 1.15,
 
-    // 3. Wide half-width capitals (A-Z,%)
-    // if (/[A-Z]/.test(char)) {
-    if (/[A-Z%]/.test(char)) {
-      return 1.3;
+      // Half-width lowercase letters
+      'i': 0.5, 'l': 0.5, 'j': 0.5,
+      'f': 0.8, 't': 0.8, 'r': 0.8,
+      'c': 0.9, 's': 0.9, 'x': 0.9, 'z': 0.9,
+      'm': 1.5, 'w': 1.3,
+      'a': 1.1, 'b': 1.1, 'd': 1.1, 'e': 1.1, 'g': 1.1, 'h': 1.1,
+      'k': 1.1, 'n': 1.1, 'o': 1.1, 'p': 1.1, 'q': 1.1, 'u': 1.1,
+      'v': 1.1, 'y': 1.1,
+
+      // Half-width uppercase letters
+      'I': 0.7,
+      'M': 1.6, 'W': 1.8,
+      'A': 1.3, 'B': 1.3, 'C': 1.3, 'D': 1.3, 'E': 1.3, 'F': 1.3,
+      'G': 1.3, 'H': 1.3, 'J': 1.1, 'K': 1.3, 'L': 1.3, 'N': 1.3,
+      'O': 1.3, 'P': 1.3, 'Q': 1.3, 'R': 1.3, 'S': 1.3, 'T': 1.3,
+      'U': 1.3, 'V': 1.3, 'X': 1.3, 'Y': 1.3, 'Z': 1.3,
+
+      // Symbols & Spaces
+      ' ': 0.8,
+      '!': 0.5, '"': 0.8, '#': 1.5, '$': 1.2, '%': 2.0, '&': 1.6, "'": 0.5,
+      '(': 0.6, ')': 0.6, '*': 0.8, '+': 1.2, ',': 0.5, '-': 0.8, '.': 0.5,
+      '/': 0.7, ':': 0.4, ';': 0.4, '<': 1.2, '=': 1.2, '>': 1.2, '?': 1.1,
+      '@': 2.0, '[': 0.6, '\\': 0.8, ']': 0.6, '^': 1.0, '_': 1.1, '`': 0.6,
+      '{': 0.6, '|': 0.5, '}': 0.6, '~': 1.2
+    };
+
+    if (char in CHAR_WIDTHS) {
+      return CHAR_WIDTHS[char];
     }
 
-    // 4. Narrow characters (i, l, I, and punctuation)
-    if (/[ilI|!.,"';:']/.test(char)) {
-      return 0.5;
-    }
-
-    // 5. Extra-wide symbols (rendered nearly full-width on hardware)
-    // if (char === '@') {
-    if (/[@#&]/.test(char)) {
-      return 2.0;
-    }
-
-    // 6. Symbols & Spaces
-    if (/[ \-+\/*=<>()[\]{}]/.test(char)) {
-      return 0.8;
-    }
-
-    // 7. Others (lowercase alpha, etc.)
+    // Default fallback for any unmapped ASCII
     return 1.0;
   }
 }

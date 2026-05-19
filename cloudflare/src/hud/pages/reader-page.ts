@@ -123,8 +123,10 @@ export class ReaderPage extends BasePage {
         if (splitPos > 0 && splitPos < currentLine.length) {
           const finishedLine = currentLine.substring(0, splitPos);
           const remaining = currentLine.substring(splitPos);
-          lines.push(finishedLine);
-          currentLine = remaining + char;
+          
+          lines.push(finishedLine.replace(/ +$/, ""));
+          currentLine = (remaining + char).replace(/^ +/, "");
+          
           // Recalculate width for the new line starting with backtracked text
           currentWidth = 0;
           for (const c of currentLine) {
@@ -132,16 +134,28 @@ export class ReaderPage extends BasePage {
           }
         } else {
           // Standard break if no suitable split point is found
-          lines.push(currentLine);
-          currentLine = char;
-          currentWidth = w;
+          lines.push(currentLine.replace(/ +$/, ""));
+          
+          if (char === ' ') {
+            currentLine = "";
+            currentWidth = 0;
+          } else {
+            currentLine = char;
+            currentWidth = w;
+          }
         }
       } else {
         currentLine += char;
         currentWidth += w;
       }
     }
-    if (currentLine) lines.push(currentLine);
+    
+    if (currentLine) {
+      const finalLine = currentLine.replace(/^ +/, "").replace(/ +$/, "");
+      if (finalLine) {
+        lines.push(finalLine);
+      }
+    }
     return lines;
   }
 
