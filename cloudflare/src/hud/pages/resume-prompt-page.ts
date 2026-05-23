@@ -18,13 +18,15 @@ export interface GoogleFileForPrompt {
  * to visually distinguish it as a dialog overlay.
  */
 export class ResumePromptPage extends BasePage {
-  private static readonly ID_DIALOG = 1;
+  private static readonly ID_LOADING = 1;
+  private static readonly ID_DIALOG = 2;
 
   private files: GoogleFileForPrompt[];
   private fileIndex: number;
   private onFileSelected: (file: GoogleFileForPrompt) => Promise<string>;
   private listPage: BasePage;
   private selectedOption: 0 | 1 = 0; // 0 = Yes, 1 = No
+  private loadingMessage: string;
 
   constructor(
     files: GoogleFileForPrompt[],
@@ -38,6 +40,12 @@ export class ResumePromptPage extends BasePage {
     this.onFileSelected = onFileSelected;
     this.listPage = listPage;
     this.pageType = "ResumePromptPage";
+
+    const file = this.files[this.fileIndex];
+    const truncatedName = file.name.length > 40
+      ? file.name.substring(0, 37) + "..."
+      : file.name;
+    this.loadingMessage = `Loading:\n${truncatedName}`;
   }
 
   private getDialogText(): string {
@@ -56,8 +64,19 @@ export class ResumePromptPage extends BasePage {
     // Dialog container: inset from the normal body area (4,30,572,256)
     // by ~50px on each side for a dialog feel, with larger border radius
     return {
-      containerTotalNum: 1,
+      containerTotalNum: 2,
       textObject: [
+        new TextContainerProperty({
+          xPosition: 0,
+          yPosition: 0,
+          width: 576,
+          height: 288,
+          borderWidth: 0,
+          containerID: ResumePromptPage.ID_LOADING,
+          containerName: "loading-text",
+          isEventCapture: 0,
+          content: this.loadingMessage,
+        }),
         new TextContainerProperty({
           xPosition: 200,
           yPosition: 70,

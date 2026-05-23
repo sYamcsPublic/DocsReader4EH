@@ -248,6 +248,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **2026/05/02**: Added a feature that allows you to toggle between displaying the filename on the first line and the current date and time with a single tap on the document view screen.  Added support for the Google Docs API (Verbatim mode), enabling the display of full-width characters and layout without any omissions. Added a feature to the GAS sample code that automatically generates a calendar using a monospaced font for full-width characters.
 - **2026/05/17**: Added the "Resume Reading Prompt" feature that asks whether to resume from the last reading position before opening a document. Reading percentage is now also displayed in the file list when this feature is enabled. Updated the Cache Mode description.
 - **2026/05/19**: Analyzed the character width in detail and fixed it. Fixed an issue related to line breaks in English.
+- **2026/05/23**: Added a feature that displays the name of the file being loaded in the background of the “Resume Reading Prompt” dialog. Added a feature to close the dialog with a double-tap.
 
 ---
 
@@ -498,6 +499,7 @@ npm run pack
 - **2026/05/02**: 本文表示時にシングルタップすることで表示内容を切り替えられる機能（ファイル名 or 現在日時）を追加。Google Docs API（Verbatimモード）に対応し、全角文字やレイアウトを省略せずに表示可能に。GASサンプルコードに全角文字の等角フォントを活かしたカレンダー自動生成機能を追加。
 - **2026/05/17**: ドキュメントを開く際に前回の既読位置から再開するかを確認する「Resume Reading Prompt」機能を追加。本機能の有効時はファイルリスト画面にも既読割合を表示。Cache Modeの説明文を更新。
 - **2026/05/19**: 文字幅の詳細解析と修正、英語の改行に関する問題を修正。
+- **2026/05/23**: 「Resume Reading Prompt」のダイアログ背景に読み込み中ファイル名を表示。ダブルタップでダイアログを閉じる機能を追加。
 
 ---
 

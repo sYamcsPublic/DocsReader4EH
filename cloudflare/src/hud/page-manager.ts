@@ -268,6 +268,9 @@ export class PageManager {
       // From ReaderPage, always go back to list (Normal mode)
       this.viewMode = GlassViewMode.NORMAL;
       await this.currentPage.onDoubleClick({}); // This usually triggers navigation back to list
+    } else if (this.currentPage.pageType === "ResumePromptPage") {
+      // From ResumePromptPage, handle double click to go back to list
+      await this.currentPage.onDoubleClick({});
     } else if (this.currentPage.pageType === "FileListPage") {
       // On FileListPage, cycle: NORMAL -> AR -> HIDDEN -> NORMAL
       if (this.viewMode === GlassViewMode.NORMAL) {
