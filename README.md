@@ -92,6 +92,10 @@ Open `https://docsreader4eh.syamcspublic.workers.dev/` in your browser.
 6. When you press the “Sync Glasses” button, a list of documents will appear on the glasses. (The Even app on your smartphone must be running in the background, but it will work even if the screen is locked.)
 7. When you press the “Close Glasses App” button, the app on the glasses will close.
 
+> [!IMPORTANT]
+> **Regarding Token Expiration**  
+> After a certain period (about a few days to a week), the token may expire, causing automatic login to fail. If this happens, please repeat steps 3.5.3 and 3.5.4 (copying and pasting the token).
+
 ## 4. How to Use
 
 ### 4.1 Top Screen
@@ -249,6 +253,7 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 - **2026/05/17**: Added the "Resume Reading Prompt" feature that asks whether to resume from the last reading position before opening a document. Reading percentage is now also displayed in the file list when this feature is enabled. Updated the Cache Mode description.
 - **2026/05/19**: Analyzed the character width in detail and fixed it. Fixed an issue related to line breaks in English.
 - **2026/05/23**: Added a feature that displays the name of the file being loaded in the background of the “Resume Reading Prompt” dialog. Added a feature to close the dialog with a double-tap.
+- **2026/05/31**: Added notes regarding token expiration to the README.
 
 ---
 
@@ -334,6 +339,10 @@ Upload the `.ehpk` file to the [EvenHub Portal](https://hub.evenrealities.com).
 5. ログイン状態で再読み込みされます。次回以降の起動時は 3.5.1～3.5.4 の操作は不要です。
 6. 「Sync Glasses」ボタンを押下すると、グラスにドキュメントリストが表示されます。（スマホのEvenアプリがバックグラウンドで動作している必要がありますが、画面をロックしても動作します）
 7. 「Close Glasses App」ボタンを押下すると、グラスのアプリが終了します。
+
+> [!IMPORTANT]
+> **トークン有効期限について**  
+> 一定期間（数日～1週間程度）が経過すると、トークンの有効期限切れにより自動ログインに失敗することがあります。その場合は、3.5.3および3.5.4の操作（トークンの再コピーと貼り付け）を再度行ってください。
 
 ## 4. 本アプリの使い方
 
@@ -500,6 +509,7 @@ npm run pack
 - **2026/05/17**: ドキュメントを開く際に前回の既読位置から再開するかを確認する「Resume Reading Prompt」機能を追加。本機能の有効時はファイルリスト画面にも既読割合を表示。Cache Modeの説明文を更新。
 - **2026/05/19**: 文字幅の詳細解析と修正、英語の改行に関する問題を修正。
 - **2026/05/23**: 「Resume Reading Prompt」のダイアログ背景に読み込み中ファイル名を表示。ダブルタップでダイアログを閉じる機能を追加。
+- **2026/05/31**: READMEにトークン有効期限に関する注意書きを追加。
 
 ---
 
